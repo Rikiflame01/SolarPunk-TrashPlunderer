@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 6512913392931635517}
   - component: {fileID: 1954034807533680316}
   - component: {fileID: 4271144662708933580}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Bakkie
   m_TagString: Untagged
   m_Icon: {fileID: 0}

@@ -1,33 +1,45 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-[System.Serializable]
-public class BatchDefinition
-{
-    [Tooltip("Prefabs to randomly choose from for this batch (e.g., coral variants)")]
-    public GameObject[] prefabs;
-    [Tooltip("Number of batches to place")]
-    public int numberOfBatches = 1;
-    [Tooltip("Radius around the batch center where items are placed")]
-    public float batchRadius = 2f;
-    [Tooltip("Minimum spacing between items within the same batch")]
-    public float spacingWithinBatch = 1f;
-    [Tooltip("Number of items per batch")]
-    public int itemsPerBatch = 3;
-    [Tooltip("Perlin noise threshold (0-1) above which this batch is placed")]
-    public float noiseThreshold = 0.7f;
-}
+    [System.Serializable]
+    public class BatchDefinition
+    {
+        [Tooltip("Prefabs to randomly choose from for this batch (e.g., trash variants)")]
+        public GameObject[] prefabs;
+        [Tooltip("Number of batches to place")]
+        public int numberOfBatches = 1;
+        [Tooltip("Radius around the batch center where items are placed")]
+        public float batchRadius = 2f;
+        [Tooltip("Minimum spacing between items within the same batch")]
+        public float spacingWithinBatch = 1f;
+        [Tooltip("Number of items per batch")]
+        public int itemsPerBatch = 3;
+        [Tooltip("Can these objects be pushed by the player?")]
+        public bool isPushable = false;
 
-[System.Serializable]
-public class IndividualItemDefinition
-{
-    [Tooltip("Prefab for this individual item (e.g., starfish)")]
-    public GameObject prefab;
-    [Tooltip("Number of items to place")]
-    public int numberToPlace = 1;
-    [Tooltip("Perlin noise threshold (0-1) above which this item is placed")]
-    public float noiseThreshold = 0.5f;
-}
+        [Tooltip("Perlin noise threshold (0-1) above which this batch is placed")]
+        public float noiseThreshold = 0.7f;
+
+        [Tooltip("Use custom rotation instead of default plane rotation")]
+        public bool useCustomRotation = false;
+        [Tooltip("Custom rotation angles (X, Y, Z) in degrees")]
+        public Vector3 customRotation = Vector3.zero;
+    }
+
+    [System.Serializable]
+    public class IndividualItemDefinition
+    {
+        [Tooltip("Prefab for this individual item (e.g., bottle)")]
+        public GameObject prefab;
+        [Tooltip("Number of items to place")]
+        public int numberToPlace = 1;
+        public float noiseThreshold = 0.5f;
+
+        [Tooltip("Use custom rotation instead of default plane rotation")]
+        public bool useCustomRotation = false;
+        [Tooltip("Custom rotation angles (X, Y, Z) in degrees")]
+        public Vector3 customRotation = Vector3.zero;
+    }
 
 public class OceanFloorPlacer : MonoBehaviour
 {
