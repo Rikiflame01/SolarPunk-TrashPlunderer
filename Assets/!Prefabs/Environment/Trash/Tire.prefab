@@ -12,6 +12,8 @@ GameObject:
   - component: {fileID: 6132906351821258595}
   - component: {fileID: 7862113582424002838}
   - component: {fileID: 6209445855898336858}
+  - component: {fileID: -5862353206990022259}
+  - component: {fileID: 6376296887587833840}
   m_Layer: 7
   m_Name: Tire
   m_TagString: Untagged
@@ -108,3 +110,30 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.0048723347, y: 0.0048723337, z: 0.0014387129}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &-5862353206990022259
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4161746397129524875}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a910588431771474f846f732e303baa9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  col: {fileID: 6209445855898336858}
+  trashProperties: {fileID: 6376296887587833840}
+--- !u!114 &6376296887587833840
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4161746397129524875}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62c2e93c9f6b5ed49aa854d0e7e066cf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  trashClass: 1

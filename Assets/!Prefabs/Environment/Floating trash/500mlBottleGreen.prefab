@@ -13,6 +13,8 @@ GameObject:
   - component: {fileID: 4763705156654160668}
   - component: {fileID: 8658966504770058681}
   - component: {fileID: 885318133219797768}
+  - component: {fileID: -352131508182175981}
+  - component: {fileID: -2156168879554117310}
   m_Layer: 0
   m_Name: 500mlBottleGreen
   m_TagString: Untagged
@@ -139,3 +141,30 @@ CapsuleCollider:
   m_Height: 0.06221188
   m_Direction: 2
   m_Center: {x: 0.00044072402, y: 2.4882162e-17, z: -0.009038022}
+--- !u!114 &-352131508182175981
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3167888304937035432}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a910588431771474f846f732e303baa9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  col: {fileID: 885318133219797768}
+  trashProperties: {fileID: -2156168879554117310}
+--- !u!114 &-2156168879554117310
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3167888304937035432}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62c2e93c9f6b5ed49aa854d0e7e066cf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  trashClass: 0

@@ -13,6 +13,8 @@ GameObject:
   - component: {fileID: 3636636779833373218}
   - component: {fileID: 2080316346804968094}
   - component: {fileID: 732538034456054707}
+  - component: {fileID: -1384983919936826561}
+  - component: {fileID: 293450889268483984}
   m_Layer: 0
   m_Name: OilBottle
   m_TagString: Untagged
@@ -138,3 +140,30 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.019999998, y: 0.009174234, z: 0.025521174}
   m_Center: {x: 0.0034337535, y: 5.740217e-10, z: -0.007432307}
+--- !u!114 &-1384983919936826561
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5080110265178261549}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a910588431771474f846f732e303baa9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  col: {fileID: 732538034456054707}
+  trashProperties: {fileID: 293450889268483984}
+--- !u!114 &293450889268483984
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5080110265178261549}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62c2e93c9f6b5ed49aa854d0e7e066cf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  trashClass: 0

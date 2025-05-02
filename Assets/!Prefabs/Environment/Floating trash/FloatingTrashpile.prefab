@@ -13,6 +13,8 @@ GameObject:
   - component: {fileID: 6743139294113457675}
   - component: {fileID: 6672458794125852103}
   - component: {fileID: 3759584544256900745}
+  - component: {fileID: -4547906077842510337}
+  - component: {fileID: 4168712957814396027}
   m_Layer: 0
   m_Name: FloatingTrashpile
   m_TagString: Untagged
@@ -142,3 +144,30 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.047482897, y: 0.1288024, z: 0.054031283}
   m_Center: {x: 0.0009499094, y: 0.023495004, z: -0.004653207}
+--- !u!114 &-4547906077842510337
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2187397597257550108}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a910588431771474f846f732e303baa9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  col: {fileID: 3759584544256900745}
+  trashProperties: {fileID: 4168712957814396027}
+--- !u!114 &4168712957814396027
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2187397597257550108}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62c2e93c9f6b5ed49aa854d0e7e066cf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  trashClass: 1

@@ -12,6 +12,8 @@ GameObject:
   - component: {fileID: 4910892820435685331}
   - component: {fileID: 5970529722818870797}
   - component: {fileID: 2461944809999543555}
+  - component: {fileID: 4502335264833014144}
+  - component: {fileID: -6086424813402569577}
   m_Layer: 7
   m_Name: Sports
   m_TagString: Untagged
@@ -115,3 +117,30 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.01262011, y: 0.026471153, z: 0.0049021905}
   m_Center: {x: 0.00007786929, y: 0.00045072325, z: 0.002844069}
+--- !u!114 &4502335264833014144
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2428514022667166548}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a910588431771474f846f732e303baa9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  col: {fileID: 2461944809999543555}
+  trashProperties: {fileID: -6086424813402569577}
+--- !u!114 &-6086424813402569577
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2428514022667166548}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62c2e93c9f6b5ed49aa854d0e7e066cf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  trashClass: 3

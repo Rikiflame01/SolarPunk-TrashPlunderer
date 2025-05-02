@@ -180,7 +180,6 @@ public class OceanFloorPlacer : MonoBehaviour
             GameObject spawnedObject = Instantiate(prefab, pos, spawnRotation); // Parentless
             spawnedObject.transform.localScale = prefab.transform.localScale; // Preserve prefab scale
         }
-        Debug.Log($"Force placed batch at {center}");
     }
 
     // Generate positions for items within a batch, ensuring spacingWithinBatch
@@ -265,7 +264,6 @@ public class OceanFloorPlacer : MonoBehaviour
             return true; // Successfully placed the item
         }
 
-        Debug.LogWarning($"Failed to place individual item after {MAX_ATTEMPTS} attempts.");
         return false;
     }
 
@@ -276,7 +274,6 @@ public class OceanFloorPlacer : MonoBehaviour
         Vector3 position = GenerateRandomPosition();
         GameObject spawnedObject = Instantiate(item.prefab, position, spawnRotation); // Parentless
         spawnedObject.transform.localScale = item.prefab.transform.localScale; // Preserve prefab scale
-        Debug.Log($"Force placed individual item at {position}");
     }
 
     // Generate a random position within the plane's bounds
@@ -294,7 +291,6 @@ public class OceanFloorPlacer : MonoBehaviour
                 if (hit.collider.gameObject == plane)
                     return hit.point;
             }
-            Debug.LogWarning($"Raycast missed plane at X={x}, Z={z}, using fallback position.");
         }
 
         return new Vector3(x, planeY, z); // Fallback

@@ -1,14 +1,12 @@
 using UnityEngine;
 using System;
-using System.Diagnostics;
-using Unity.VisualScripting;
 
 public static class ActionManager
 {
     public static event Action OnPaused;
     public static event Action OnUnpaused;
-
     public static event Action<string> OnEndGame;
+    public static event Action<int> OnTrashCollected; // New event for trash collection
 
     public static void InvokeEndGame(string player)
     {
@@ -25,4 +23,8 @@ public static class ActionManager
         OnUnpaused?.Invoke();
     }
 
+    public static void InvokeTrashCollected(int points)
+    {
+        OnTrashCollected?.Invoke(points);
+    }
 }

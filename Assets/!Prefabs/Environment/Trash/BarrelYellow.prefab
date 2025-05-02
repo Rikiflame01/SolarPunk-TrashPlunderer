@@ -13,6 +13,8 @@ GameObject:
   - component: {fileID: 8737770193143621906}
   - component: {fileID: 653506334791030243}
   - component: {fileID: -4203204764798747652}
+  - component: {fileID: -7883555761137541903}
+  - component: {fileID: 5823824886194688020}
   m_Layer: 7
   m_Name: BarrelYellow
   m_TagString: Untagged
@@ -139,3 +141,30 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &-7883555761137541903
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5886979256397400169}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a910588431771474f846f732e303baa9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  col: {fileID: 653506334791030243}
+  trashProperties: {fileID: 5823824886194688020}
+--- !u!114 &5823824886194688020
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5886979256397400169}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62c2e93c9f6b5ed49aa854d0e7e066cf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  trashClass: 2

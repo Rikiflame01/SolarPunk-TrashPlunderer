@@ -3,8 +3,8 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody))]
 public class PlayerController : MonoBehaviour
 {
-    [SerializeField, Tooltip("Movement speed in units per second")]
-    private float moveSpeed = 5f;
+    [SerializeField, Tooltip("Player data ScriptableObject")]
+    private PlayerData playerData;
 
     [SerializeField, Tooltip("Rotate boat to face movement direction (yaw)")]
     private bool rotateToMovement = true;
@@ -15,8 +15,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField, Tooltip("Main camera for camera-relative movement")]
     private Camera mainCamera;
 
-    [SerializeField, Tooltip("Smoothing factor for velocity changes (0 = instant, 1 = very smooth)")]
-    private float velocitySmoothing = 0.1f;
+    [SerializeField, Tooltip("Acceleration for easing in/out (meters per second squared)")]
+    private float acceleration = 10f;
 
     [SerializeField, Tooltip("Target Y position for the boat (water surface)")]
     private float targetY = 2f;
@@ -42,17 +42,26 @@ public class PlayerController : MonoBehaviour
     [SerializeField, Tooltip("Frequency of pitch (cycles per second)")]
     private float pitchFrequency = 0.7f;
 
+    [SerializeField, Tooltip("Trash interaction system")]
+    private TrashInteractionSystem trashInteractionSystem;
+
+    [SerializeField, Tooltip("Enable debug logs")]
+    private bool debug = false;
+
     private Rigidbody rb;
     private Vector3 moveInput;
-    private Vector3 targetVelocity;
+    private Vector3 currentVelocity;
     private float time;
+    private float holdTimer;
+    private bool isHoldingE;
+    private float storageFullCooldown; // Cooldown for "Storage Full" message
 
     void Start()
     {
         rb = GetComponent<Rigidbody>();
-        rb.useGravity = false; // Disable gravity for buoyancy control
-        rb.interpolation = RigidbodyInterpolation.Interpolate; // Smooth movement
-        rb.constraints = RigidbodyConstraints.FreezeRotationY; // Allow roll/pitch, control yaw
+        rb.useGravity = false;
+        rb.interpolation = RigidbodyInterpolation.Interpolate;
+        rb.constraints = RigidbodyConstraints.FreezeRotationY;
 
         if (mainCamera == null)
         {
@@ -61,20 +70,35 @@ public class PlayerController : MonoBehaviour
                 Debug.LogError("No main camera found! Assign a camera in the Inspector.");
         }
 
-        // Initialize time for water motion
-        time = Random.Range(0f, 10f); // Random start for varied motion
+        if (playerData == null)
+            Debug.LogError("PlayerData ScriptableObject not assigned!");
+
+        if (trashInteractionSystem == null)
+            Debug.LogError("TrashInteractionSystem not assigned!");
+
+        time = Random.Range(0f, 10f);
+
+        ActionManager.OnTrashCollected += AddTrashPoints;
+    }
+
+    void OnDestroy()
+    {
+        ActionManager.OnTrashCollected -= AddTrashPoints;
     }
 
     void Update()
     {
-        // Get WASD/Arrow key input (smooth transitions)
-        float horizontal = Input.GetAxis("Horizontal"); // A/D or Left/Right
-        float vertical = Input.GetAxis("Vertical"); // W/S or Up/Down
+        float horizontal = Input.GetAxis("Horizontal");
+        float vertical = Input.GetAxis("Vertical");
         moveInput = new Vector3(horizontal, 0f, vertical).normalized;
 
-        // Log input for debugging
-        if (moveInput.magnitude > 0.1f)
+        if (debug && moveInput.magnitude > 0.1f)
             Debug.Log($"Input: {moveInput}, Magnitude: {moveInput.magnitude}");
+
+        if (storageFullCooldown > 0f)
+            storageFullCooldown -= Time.deltaTime;
+
+        HandleTrashInteraction();
     }
 
     void FixedUpdate()
@@ -87,63 +111,49 @@ public class PlayerController : MonoBehaviour
 
     private void MovePlayer()
     {
-        // Transform input to camera-relative direction
         Vector3 moveDirection = CameraRelativeDirection(moveInput);
+        float speed = playerData != null ? playerData.PlayerSpeed : 5f;
+        Vector3 targetVelocity = moveDirection * speed;
 
-        // Calculate target velocity (XZ plane)
-        Vector3 desiredVelocity = moveDirection * moveSpeed;
+        currentVelocity = Vector3.MoveTowards(currentVelocity, targetVelocity, acceleration * Time.fixedDeltaTime);
+        rb.linearVelocity = new Vector3(currentVelocity.x, rb.linearVelocity.y, currentVelocity.z);
 
-        // Smoothly interpolate to target velocity
-        targetVelocity = Vector3.Lerp(targetVelocity, desiredVelocity, 1f - Mathf.Pow(velocitySmoothing, Time.fixedDeltaTime * 60f));
-        targetVelocity.y = rb.linearVelocity.y; // Preserve vertical velocity
-        rb.linearVelocity = new Vector3(targetVelocity.x, rb.linearVelocity.y, targetVelocity.z);
-
-        // Log velocity for debugging
-        Debug.Log($"Velocity: {rb.linearVelocity}, Target Velocity: {targetVelocity}");
+        if (debug)
+            Debug.Log($"Velocity: {rb.linearVelocity}, Target Velocity: {targetVelocity}");
     }
 
     private void ApplyBuoyancyAndWaterMotion()
     {
         time += Time.fixedDeltaTime;
 
-        // Buoyancy: Apply force to keep boat near targetY
         float yError = targetY - transform.position.y;
-        float buoyancy = yError * buoyancyForce - rb.linearVelocity.y * 2f; // Damping
+        float buoyancy = yError * buoyancyForce - rb.linearVelocity.y * 2f;
         rb.AddForce(Vector3.up * buoyancy, ForceMode.Acceleration);
 
-        // Vertical bobbing (sinking/rising)
-        float bobOffset = Mathf.Sin(time * bobFrequency * 2f * Mathf.PI) * bobAmplitude;
-        rb.AddForce(Vector3.up * bobOffset * buoyancyForce, ForceMode.Acceleration);
+        if (bobAmplitude > 0)
+        {
+            float bobOffset = Mathf.Sin(time * bobFrequency * 2f * Mathf.PI) * bobAmplitude;
+            rb.AddForce(Vector3.up * bobOffset * buoyancyForce, ForceMode.Acceleration);
+        }
 
-        // Calculate roll and pitch rotations
-        float roll = Mathf.Sin(time * rollFrequency * 2f * Mathf.PI) * rollAmplitude;
-        float pitch = Mathf.Cos(time * pitchFrequency * 2f * Mathf.PI) * pitchAmplitude;
-
-        // Apply roll and pitch (local X and Z rotations)
-        Quaternion targetRotation = Quaternion.Euler(pitch, rb.rotation.eulerAngles.y, roll);
-        rb.rotation = Quaternion.Slerp(rb.rotation, targetRotation, Time.fixedDeltaTime * 2f);
+        if (rollAmplitude > 0 || pitchAmplitude > 0)
+        {
+            float roll = Mathf.Sin(time * rollFrequency * 2f * Mathf.PI) * rollAmplitude;
+            float pitch = Mathf.Cos(time * pitchFrequency * 2f * Mathf.PI) * pitchAmplitude;
+            Quaternion targetRotation = Quaternion.Euler(pitch, rb.rotation.eulerAngles.y, roll);
+            rb.rotation = Quaternion.Slerp(rb.rotation, targetRotation, Time.fixedDeltaTime * 2f);
+        }
     }
 
     private void RotatePlayer()
     {
-        // Get camera-relative movement direction
         Vector3 moveDirection = CameraRelativeDirection(moveInput);
-
-        // Calculate target yaw rotation
         Quaternion targetYaw = Quaternion.LookRotation(moveDirection, Vector3.up);
-
-        // Preserve current roll and pitch, only update yaw
         Vector3 euler = targetYaw.eulerAngles;
         euler.x = rb.rotation.eulerAngles.x;
         euler.z = rb.rotation.eulerAngles.z;
         targetYaw = Quaternion.Euler(euler);
-
-        // Smoothly rotate to face movement direction
-        rb.rotation = Quaternion.RotateTowards(
-            rb.rotation,
-            targetYaw,
-            rotationSpeed * Time.fixedDeltaTime
-        );
+        rb.rotation = Quaternion.RotateTowards(rb.rotation, targetYaw, rotationSpeed * Time.fixedDeltaTime);
     }
 
     private Vector3 CameraRelativeDirection(Vector3 input)
@@ -151,7 +161,6 @@ public class PlayerController : MonoBehaviour
         if (mainCamera == null)
             return input;
 
-        // Get camera's forward and right vectors, projected onto XZ plane
         Vector3 camForward = mainCamera.transform.forward;
         camForward.y = 0f;
         camForward.Normalize();
@@ -160,7 +169,93 @@ public class PlayerController : MonoBehaviour
         camRight.y = 0f;
         camRight.Normalize();
 
-        // Transform input to camera-relative direction
         return (camForward * input.z + camRight * input.x).normalized;
+    }
+
+    private void HandleTrashInteraction()
+    {
+        if (trashInteractionSystem == null || trashInteractionSystem.ClosestTrash == null)
+            return;
+
+        InteractableTrash closest = trashInteractionSystem.ClosestTrash;
+        TrashProperties properties = closest.TrashProperties;
+
+        if (properties == null)
+            return;
+
+        int points = properties.GetPoints();
+        bool canCollect = playerData != null && playerData.CurrentTrash + points <= playerData.PlayerStorage;
+
+        // Surface Trash: Tap E to collect
+        if (closest.gameObject.layer == LayerMask.NameToLayer("Trash") && Input.GetKeyDown(KeyCode.E))
+        {
+            if (canCollect)
+            {
+                ActionManager.InvokeTrashCollected(points);
+                trashInteractionSystem.OnTrashCollected(closest);
+                Destroy(closest.gameObject);
+                if (debug)
+                    Debug.Log($"Collected surface trash {closest.gameObject.name} for {points} points");
+            }
+            else if (storageFullCooldown <= 0f)
+            {
+                trashInteractionSystem.CanvasInstance.ShowTempMessage("Storage Full", 1f);
+                storageFullCooldown = 1f; // Prevent spamming message
+                if (debug)
+                    Debug.Log("Cannot collect surface trash: Storage full");
+            }
+        }
+        // UnderWaterTrash: Hold E for specific duration
+        else if (closest.gameObject.layer == LayerMask.NameToLayer("UnderWaterTrash"))
+        {
+            if (Input.GetKey(KeyCode.E))
+            {
+                isHoldingE = true;
+                holdTimer += Time.deltaTime;
+                float requiredHoldTime = properties.GetHoldTime();
+                if (holdTimer >= requiredHoldTime)
+                {
+                    if (canCollect)
+                    {
+                        ActionManager.InvokeTrashCollected(points);
+                        trashInteractionSystem.OnTrashCollected(closest);
+                        Destroy(closest.gameObject);
+                        if (debug)
+                            Debug.Log($"Collected underwater trash {closest.gameObject.name} for {points} points after holding E for {holdTimer}s");
+                        holdTimer = 0f;
+                        isHoldingE = false;
+                    }
+                    else if (storageFullCooldown <= 0f)
+                    {
+                        trashInteractionSystem.CanvasInstance.ShowTempMessage("Storage Full", 1f);
+                        storageFullCooldown = 1f; // Prevent spamming message
+                        holdTimer = 0f;
+                        isHoldingE = false;
+                        if (debug)
+                            Debug.Log("Cannot collect underwater trash: Storage full");
+                    }
+                }
+            }
+            else
+            {
+                if (isHoldingE)
+                {
+                    holdTimer = 0f;
+                    isHoldingE = false;
+                    if (debug)
+                        Debug.Log("Released E before collecting underwater trash");
+                }
+            }
+        }
+    }
+
+    private void AddTrashPoints(int points)
+    {
+        if (playerData != null)
+        {
+            playerData.CurrentTrash += points;
+            if (debug)
+                Debug.Log($"Added {points} to CurrentTrash. Total: {playerData.CurrentTrash}");
+        }
     }
 }

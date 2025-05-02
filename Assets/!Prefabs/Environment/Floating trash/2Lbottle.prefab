@@ -13,6 +13,8 @@ GameObject:
   - component: {fileID: 2323349730448815130}
   - component: {fileID: 2303025177186557961}
   - component: {fileID: 829186839592988167}
+  - component: {fileID: 3090249739241399176}
+  - component: {fileID: -2687258427141367378}
   m_Layer: 0
   m_Name: 2Lbottle
   m_TagString: Untagged
@@ -140,3 +142,30 @@ CapsuleCollider:
   m_Height: 0.064287975
   m_Direction: 2
   m_Center: {x: 0.00025620317, y: -6.641371e-17, z: -0.0072910693}
+--- !u!114 &3090249739241399176
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6394801874364417051}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a910588431771474f846f732e303baa9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  col: {fileID: 829186839592988167}
+  trashProperties: {fileID: -2687258427141367378}
+--- !u!114 &-2687258427141367378
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6394801874364417051}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62c2e93c9f6b5ed49aa854d0e7e066cf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  trashClass: 0

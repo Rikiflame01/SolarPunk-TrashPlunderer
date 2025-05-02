@@ -12,6 +12,8 @@ GameObject:
   - component: {fileID: 6512913392931635517}
   - component: {fileID: 1954034807533680316}
   - component: {fileID: 4271144662708933580}
+  - component: {fileID: 6635528041301952639}
+  - component: {fileID: -295846913592811606}
   m_Layer: 7
   m_Name: Bakkie
   m_TagString: Untagged
@@ -113,3 +115,30 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.010756655, y: 0.02677692, z: 0.0059592156}
   m_Center: {x: -0.0010345316, y: 0.00076205743, z: 0.0035261938}
+--- !u!114 &6635528041301952639
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6104294543163702187}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a910588431771474f846f732e303baa9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  col: {fileID: 4271144662708933580}
+  trashProperties: {fileID: -295846913592811606}
+--- !u!114 &-295846913592811606
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6104294543163702187}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62c2e93c9f6b5ed49aa854d0e7e066cf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  trashClass: 3

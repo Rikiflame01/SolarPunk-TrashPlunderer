@@ -57,15 +57,6 @@ namespace TrashSpawner
                 Debug.DrawLine(new Vector3(min.x, FLOATING_Y, max.z), new Vector3(min.x, FLOATING_Y, min.z), Color.green, 0.1f);
             }
 
-            if (Input.GetMouseButtonDown(0))
-            {
-                Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-                int trashLayerMask = LayerMask.GetMask("Trash");
-                if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, trashLayerMask))
-                {
-                    Debug.Log($"Clicked trash: {hit.collider.gameObject.name}");
-                }
-            }
         }
 
         private void CalculatePlaneBounds()
@@ -169,7 +160,6 @@ namespace TrashSpawner
                 spawnedObject.transform.localScale = prefab.transform.localScale;
                 SetupTrashObject(spawnedObject, batch.isPushable);
             }
-            Debug.Log($"Force placed batch at {center}");
         }
 
         private List<Vector3> GenerateBatchPositions(Vector3 center, BatchDefinition batch)
