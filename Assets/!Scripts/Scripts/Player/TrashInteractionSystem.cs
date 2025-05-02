@@ -1,5 +1,4 @@
 using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
 
 public class TrashInteractionSystem : MonoBehaviour
@@ -25,20 +24,15 @@ public class TrashInteractionSystem : MonoBehaviour
     [SerializeField, Tooltip("Update interval for detection (seconds)")]
     private float detectionInterval = 0.2f;
 
-    [SerializeField, Tooltip("Update interval for closest trash check (seconds)")]
-    private float closestTrashUpdateInterval = 0.1f;
-
     private List<InteractableTrash> nearbyTrash = new List<InteractableTrash>(32);
     private InteractableTrash closestTrash;
     private InteractionCanvas canvasInstance;
     private Transform cameraTransform;
     private float detectionTimer;
     private Collider[] hitBuffer = new Collider[32];
-    private bool isCanvasSetup;
-    private Coroutine closestTrashCoroutine;
 
     public InteractableTrash ClosestTrash => closestTrash;
-    public InteractionCanvas CanvasInstance => canvasInstance;
+    public InteractionCanvas CanvasInstance => canvasInstance; // Expose for PlayerController
 
     void Start()
     {
@@ -61,39 +55,22 @@ public class TrashInteractionSystem : MonoBehaviour
             return;
         }
 
-        // Start batched trash initialization
-        StartCoroutine(BatchInitializeTrash());
-        // Start detection coroutine
-        StartCoroutine(DetectNearbyTrashCoroutine());
+        canvasInstance = Instantiate(canvasPrefab, Vector3.zero, Quaternion.identity);
+        canvasInstance.Initialize(cameraTransform);
+
+        DetectNearbyTrash();
     }
 
-    private IEnumerator BatchInitializeTrash()
+    void Update()
     {
-        InteractableTrash[] allTrash = FindObjectsByType<InteractableTrash>(FindObjectsSortMode.None);
-        int batchSize = 10; // Initialize 10 trash objects per frame
-        for (int i = 0; i < allTrash.Length; i += batchSize)
-        {
-            for (int j = i; j < Mathf.Min(i + batchSize, allTrash.Length); j++)
-            {
-                if (allTrash[j] != null && !allTrash[j].IsActive)
-                    allTrash[j].Initialize();
-            }
-            yield return null; // Spread over frames
-        }
-        Debug.Log($"Initialized {allTrash.Length} trash objects");
-    }
-
-    private IEnumerator DetectNearbyTrashCoroutine()
-    {
-        while (true)
+        detectionTimer += Time.deltaTime;
+        if (detectionTimer >= detectionInterval)
         {
             DetectNearbyTrash();
-            if (nearbyTrash.Count > 0 && !isCanvasSetup)
-            {
-                SetupCanvas();
-            }
-            yield return new WaitForSeconds(detectionInterval);
+            detectionTimer = 0f;
         }
+
+        UpdateClosestTrash();
     }
 
     private void DetectNearbyTrash()
@@ -104,33 +81,10 @@ public class TrashInteractionSystem : MonoBehaviour
         for (int i = 0; i < hitCount; i++)
         {
             InteractableTrash trash = hitBuffer[i].GetComponent<InteractableTrash>();
-            if (trash != null && trash.IsActive && !nearbyTrash.Contains(trash))
+            if (trash != null && !nearbyTrash.Contains(trash))
             {
                 nearbyTrash.Add(trash);
             }
-        }
-        Debug.Log($"Detected {nearbyTrash.Count} trash objects within {detectionRadius}m");
-    }
-
-    private void SetupCanvas()
-    {
-        if (isCanvasSetup)
-            return;
-
-        canvasInstance = Instantiate(canvasPrefab, Vector3.zero, Quaternion.identity);
-        canvasInstance.Initialize(cameraTransform);
-        isCanvasSetup = true;
-        // Start closest trash update coroutine
-        closestTrashCoroutine = StartCoroutine(UpdateClosestTrashCoroutine());
-        Debug.Log("InteractionCanvas setup complete");
-    }
-
-    private IEnumerator UpdateClosestTrashCoroutine()
-    {
-        while (true)
-        {
-            UpdateClosestTrash();
-            yield return new WaitForSeconds(closestTrashUpdateInterval);
         }
     }
 
@@ -144,7 +98,7 @@ public class TrashInteractionSystem : MonoBehaviour
         Vector3 playerPos = transform.position;
         foreach (var trash in nearbyTrash)
         {
-            if (trash == null || !trash.IsActive)
+            if (trash == null || trash.gameObject == null)
                 continue;
 
             if (trash.gameObject.layer == LayerMask.NameToLayer("Trash"))
@@ -163,7 +117,7 @@ public class TrashInteractionSystem : MonoBehaviour
         {
             foreach (var trash in nearbyTrash)
             {
-                if (trash == null || !trash.IsActive)
+                if (trash == null || trash.gameObject == null)
                     continue;
 
                 if (trash.gameObject.layer == LayerMask.NameToLayer("UnderWaterTrash"))
@@ -183,27 +137,22 @@ public class TrashInteractionSystem : MonoBehaviour
         {
             if (closestTrash != null && (newClosestTrash != closestTrash || string.IsNullOrEmpty(prompt)))
             {
-                if (canvasInstance != null && !canvasInstance.IsShowingTempMessage)
-                    canvasInstance.HidePrompt();
+                canvasInstance.HidePrompt();
             }
 
             closestTrash = newClosestTrash;
 
-            if (closestTrash != null && !string.IsNullOrEmpty(prompt) && canvasInstance != null && !canvasInstance.IsShowingTempMessage)
+            if (closestTrash != null && !string.IsNullOrEmpty(prompt))
             {
                 canvasPosition = closestTrash.GetCanvasPosition();
                 canvasInstance.ShowPrompt(prompt, canvasPosition);
                 Debug.Log($"Showing canvas for {closestTrash.gameObject.name} with prompt: {prompt} at {canvasPosition}");
             }
         }
-        else if (closestTrash != null && string.IsNullOrEmpty(prompt) && canvasInstance != null && !canvasInstance.IsShowingTempMessage)
+        else if (closestTrash != null && string.IsNullOrEmpty(prompt))
         {
             canvasInstance.HidePrompt();
         }
-
-        // Disable canvas if no trash is nearby
-        if (nearbyTrash.Count == 0 && canvasInstance != null)
-            canvasInstance.HidePrompt();
     }
 
     public void OnTrashCollected(InteractableTrash collectedTrash)
@@ -214,10 +163,9 @@ public class TrashInteractionSystem : MonoBehaviour
             if (closestTrash == collectedTrash)
             {
                 closestTrash = null;
-                if (canvasInstance != null && !canvasInstance.IsShowingTempMessage)
-                    canvasInstance.HidePrompt();
+                canvasInstance.HidePrompt();
             }
-            DetectNearbyTrash(); // Immediate refresh
+            DetectNearbyTrash();
         }
     }
 
@@ -225,8 +173,6 @@ public class TrashInteractionSystem : MonoBehaviour
     {
         if (canvasInstance != null)
             Destroy(canvasInstance.gameObject);
-        if (closestTrashCoroutine != null)
-            StopCoroutine(closestTrashCoroutine);
     }
 
     void OnDrawGizmosSelected()
