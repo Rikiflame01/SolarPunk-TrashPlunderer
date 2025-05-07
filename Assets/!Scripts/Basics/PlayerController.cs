@@ -48,13 +48,18 @@ public class PlayerController : MonoBehaviour
     [SerializeField, Tooltip("Enable debug logs")]
     private bool debug = false;
 
+    [SerializeField, Tooltip("Speed of rotation correction after collision (higher is faster)")]
+    private float collisionCorrectionSpeed = 5f;
+
     private Rigidbody rb;
     private Vector3 moveInput;
     private Vector3 currentVelocity;
     private float time;
     private float holdTimer;
     private bool isHoldingE;
-    private float storageFullCooldown; // Cooldown for "Storage Full" message
+    private float storageFullCooldown;
+    private bool isCorrectingToNaturalAngle; // Flag to trigger correction after collision
+    private Quaternion naturalRotation; // default angle (-5, 0, 0)
 
     void Start()
     {
@@ -62,6 +67,8 @@ public class PlayerController : MonoBehaviour
         rb.useGravity = false;
         rb.interpolation = RigidbodyInterpolation.Interpolate;
         rb.constraints = RigidbodyConstraints.FreezeRotationY;
+        rb.linearDamping = 0.5f; // Ensure linear damping
+        rb.angularDamping = 2f; // Increased angular damping to reduce oscillation
 
         if (mainCamera == null)
         {
@@ -77,6 +84,8 @@ public class PlayerController : MonoBehaviour
             Debug.LogError("TrashInteractionSystem not assigned!");
 
         time = Random.Range(0f, 10f);
+        isCorrectingToNaturalAngle = false;
+        naturalRotation = Quaternion.Euler(-5f, 0f, 0f); // default angle: -5 pitch, 0 yaw, 0 roll
 
         ActionManager.OnTrashCollected += AddTrashPoints;
     }
@@ -126,23 +135,60 @@ public class PlayerController : MonoBehaviour
     {
         time += Time.fixedDeltaTime;
 
+        // Apply buoyancy to keep boat at target Y position
         float yError = targetY - transform.position.y;
         float buoyancy = yError * buoyancyForce - rb.linearVelocity.y * 2f;
         rb.AddForce(Vector3.up * buoyancy, ForceMode.Acceleration);
 
+        // Apply vertical bobbing
         if (bobAmplitude > 0)
         {
             float bobOffset = Mathf.Sin(time * bobFrequency * 2f * Mathf.PI) * bobAmplitude;
             rb.AddForce(Vector3.up * bobOffset * buoyancyForce, ForceMode.Acceleration);
         }
 
-        if (rollAmplitude > 0 || pitchAmplitude > 0)
+        // Compute target pitch and roll
+        float targetPitch, targetRoll;
+        Vector3 currentEuler = rb.rotation.eulerAngles;
+        float yaw = currentEuler.y;
+
+        if (isCorrectingToNaturalAngle)
         {
-            float roll = Mathf.Sin(time * rollFrequency * 2f * Mathf.PI) * rollAmplitude;
-            float pitch = Mathf.Cos(time * pitchFrequency * 2f * Mathf.PI) * pitchAmplitude;
-            Quaternion targetRotation = Quaternion.Euler(pitch, rb.rotation.eulerAngles.y, roll);
-            rb.rotation = Quaternion.Slerp(rb.rotation, targetRotation, Time.fixedDeltaTime * 2f);
+            // Correct to natural angle (-5, 0, 0)
+            targetPitch = -5f;
+            targetRoll = 0f;
+
+            // Check if close enough to stop correction
+            float currentPitch = NormalizeAngle(currentEuler.x);
+            float currentRoll = NormalizeAngle(currentEuler.z);
+            if (Mathf.Abs(currentPitch - targetPitch) < 0.1f && Mathf.Abs(currentRoll - targetRoll) < 0.1f)
+            {
+                isCorrectingToNaturalAngle = false;
+                if (debug)
+                    Debug.Log("Finished correcting to natural angle (-5, 0, 0)");
+            }
         }
+        else
+        {
+            // Apply wave-like motion around natural angle
+            targetRoll = Mathf.Sin(time * rollFrequency * 2f * Mathf.PI) * rollAmplitude;
+            targetPitch = Mathf.Cos(time * pitchFrequency * 2f * Mathf.PI) * pitchAmplitude - 5f; // Oscillate around -5
+        }
+
+        // Clamp angles to limits (X: -25 to 25, Z: -20 to 20)
+        targetPitch = Mathf.Clamp(targetPitch, -25f, 25f);
+        targetRoll = Mathf.Clamp(targetRoll, -20f, 20f);
+
+        // Normalize angles
+        float normalizedPitch = NormalizeAngle(targetPitch);
+        float normalizedRoll = NormalizeAngle(targetRoll);
+
+        // Apply rotation with smooth interpolation
+        Quaternion targetRotation = Quaternion.Euler(normalizedPitch, yaw, normalizedRoll);
+        rb.rotation = Quaternion.Slerp(rb.rotation, targetRotation, Time.fixedDeltaTime * (isCorrectingToNaturalAngle ? collisionCorrectionSpeed : 2f));
+
+        if (debug)
+            Debug.Log($"Current Rotation: ({currentEuler.x}, {yaw}, {currentEuler.z}), Target: ({normalizedPitch}, {yaw}, {normalizedRoll}), Correcting: {isCorrectingToNaturalAngle}");
     }
 
     private void RotatePlayer()
@@ -150,10 +196,10 @@ public class PlayerController : MonoBehaviour
         Vector3 moveDirection = CameraRelativeDirection(moveInput);
         Quaternion targetYaw = Quaternion.LookRotation(moveDirection, Vector3.up);
         Vector3 euler = targetYaw.eulerAngles;
-        euler.x = rb.rotation.eulerAngles.x;
-        euler.z = rb.rotation.eulerAngles.z;
+        euler.x = rb.rotation.eulerAngles.x; // Preserve current pitch
+        euler.z = rb.rotation.eulerAngles.z; // Preserve current roll
         targetYaw = Quaternion.Euler(euler);
-        rb.rotation = Quaternion.RotateTowards(rb.rotation, targetYaw, rotationSpeed * Time.fixedDeltaTime);
+        rb.rotation = Quaternion.Slerp(rb.rotation, targetYaw, Time.fixedDeltaTime * rotationSpeed / 360f); // Scale rotationSpeed
     }
 
     private Vector3 CameraRelativeDirection(Vector3 input)
@@ -257,5 +303,21 @@ public class PlayerController : MonoBehaviour
             if (debug)
                 Debug.Log($"Added {points} to CurrentTrash. Total: {playerData.CurrentTrash}");
         }
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        // Trigger correction to natural angle on collision
+        isCorrectingToNaturalAngle = true;
+        if (debug)
+            Debug.Log($"Collision detected with {collision.gameObject.name}. Correcting to natural angle (-5, 0, 0)");
+    }
+
+    // Helper method to normalize angles to the range [-180, 180]
+    private float NormalizeAngle(float angle)
+    {
+        while (angle > 180f) angle -= 360f;
+        while (angle < -180f) angle += 360f;
+        return angle;
     }
 }
