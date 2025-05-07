@@ -51,6 +51,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField, Tooltip("Speed of rotation correction after collision (higher is faster)")]
     private float collisionCorrectionSpeed = 5f;
 
+    public bool IsMovementEnabled { get; set; } = true;
+
     private Rigidbody rb;
     private Vector3 moveInput;
     private Vector3 currentVelocity;
@@ -97,12 +99,19 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        float horizontal = Input.GetAxis("Horizontal");
-        float vertical = Input.GetAxis("Vertical");
-        moveInput = new Vector3(horizontal, 0f, vertical).normalized;
+        if (IsMovementEnabled)
+        {
+            float horizontal = Input.GetAxis("Horizontal");
+            float vertical = Input.GetAxis("Vertical");
+            moveInput = new Vector3(horizontal, 0f, vertical).normalized;
 
-        if (debug && moveInput.magnitude > 0.1f)
-            Debug.Log($"Input: {moveInput}, Magnitude: {moveInput.magnitude}");
+            if (debug && moveInput.magnitude > 0.1f)
+                Debug.Log($"Input: {moveInput}, Magnitude: {moveInput.magnitude}");
+        }
+        else
+        {
+            moveInput = Vector3.zero;
+        }
 
         if (storageFullCooldown > 0f)
             storageFullCooldown -= Time.deltaTime;
@@ -112,12 +121,14 @@ public class PlayerController : MonoBehaviour
 
     void FixedUpdate()
     {
-        MovePlayer();
+        if (IsMovementEnabled)
+        {
+            MovePlayer();
+            if (rotateToMovement && moveInput.magnitude > 0.1f)
+                RotatePlayer();
+        }
         ApplyBuoyancyAndWaterMotion();
-        if (rotateToMovement && moveInput.magnitude > 0.1f)
-            RotatePlayer();
     }
-
     private void MovePlayer()
     {
         Vector3 moveDirection = CameraRelativeDirection(moveInput);
