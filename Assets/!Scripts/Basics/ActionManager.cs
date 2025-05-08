@@ -12,6 +12,14 @@ public static class ActionManager
     public static event Action OnDockingIncomplete;
     public static event Action OnDockingInProgress;
 
+    public static event Action<GameState> OnGameStateChanged;
+
+
+    public static void InvokeGameStateChanged(GameState newState)
+    {
+        OnGameStateChanged?.Invoke(newState);
+    }
+
     public static void InvokeDockingComplete()
     {
         OnDockingComplete?.Invoke();

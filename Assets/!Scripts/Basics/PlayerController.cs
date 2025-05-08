@@ -6,6 +6,9 @@ public class PlayerController : MonoBehaviour
     [SerializeField, Tooltip("Player data ScriptableObject")]
     private PlayerData playerData;
 
+    private float hpRegenAccumulator = 0f;
+    private float energyRegenAccumulator = 0f;
+
     [SerializeField, Tooltip("Rotate boat to face movement direction (yaw)")]
     private bool rotateToMovement = true;
 
@@ -51,6 +54,9 @@ public class PlayerController : MonoBehaviour
     [SerializeField, Tooltip("Speed of rotation correction after collision (higher is faster)")]
     private float collisionCorrectionSpeed = 5f;
 
+    [SerializeField, Tooltip("Time interval for energy drain while moving (seconds per 1 energy point)")]
+    private float energyDrainInterval = 3f;
+
     public bool IsMovementEnabled { get; set; } = true;
 
     private Rigidbody rb;
@@ -60,8 +66,9 @@ public class PlayerController : MonoBehaviour
     private float holdTimer;
     private bool isHoldingE;
     private float storageFullCooldown;
-    private bool isCorrectingToNaturalAngle; // Flag to trigger correction after collision
-    private Quaternion naturalRotation; // default angle (-5, 0, 0)
+    private bool isCorrectingToNaturalAngle;
+    private Quaternion naturalRotation;
+    private float energyDrainTimer;
 
     void Start()
     {
@@ -69,8 +76,8 @@ public class PlayerController : MonoBehaviour
         rb.useGravity = false;
         rb.interpolation = RigidbodyInterpolation.Interpolate;
         rb.constraints = RigidbodyConstraints.FreezeRotationY;
-        rb.linearDamping = 0.5f; // Ensure linear damping
-        rb.angularDamping = 2f; // Increased angular damping to reduce oscillation
+        rb.linearDamping = 0.5f;
+        rb.angularDamping = 2f;
 
         if (mainCamera == null)
         {
@@ -81,24 +88,88 @@ public class PlayerController : MonoBehaviour
 
         if (playerData == null)
             Debug.LogError("PlayerData ScriptableObject not assigned!");
+        else if (debug)
+            Debug.Log($"PlayerData assigned: HP={playerData.PlayerHP}, Energy={playerData.PlayerEnergy}");
 
         if (trashInteractionSystem == null)
             Debug.LogError("TrashInteractionSystem not assigned!");
 
         time = Random.Range(0f, 10f);
         isCorrectingToNaturalAngle = false;
-        naturalRotation = Quaternion.Euler(-5f, 0f, 0f); // default angle: -5 pitch, 0 yaw, 0 roll
+        naturalRotation = Quaternion.Euler(-5f, 0f, 0f);
+        energyDrainTimer = 0f;
 
         ActionManager.OnTrashCollected += AddTrashPoints;
+        GameManager.OnGameStateChanged += HandleGameStateChanged;
+
+        // Debug initial state
+        if (debug)
+        {
+            if (GameManager.Instance != null)
+                Debug.Log($"Initial GameState: {GameManager.Instance.CurrentState}, IsMovementEnabled: {IsMovementEnabled}");
+            else
+                Debug.LogError("GameManager.Instance is null!");
+        }
     }
 
     void OnDestroy()
     {
         ActionManager.OnTrashCollected -= AddTrashPoints;
+        GameManager.OnGameStateChanged -= HandleGameStateChanged;
+    }
+
+    private void HandleGameStateChanged(GameState newState)
+    {
+        IsMovementEnabled = newState == GameState.GamePlay;
+        if (debug)
+            Debug.Log($"Game state changed to: {newState}, IsMovementEnabled: {IsMovementEnabled}");
     }
 
     void Update()
     {
+        if (playerData == null) return;
+
+        // Regeneration in Shop state
+        if (GameManager.Instance != null && GameManager.Instance.CurrentState == GameState.Shop)
+        {
+            hpRegenAccumulator += playerData.HpRegenRate * Time.deltaTime;
+            int hpToAdd = (int)hpRegenAccumulator;
+            if (hpToAdd > 0)
+            {
+                playerData.PlayerHP += hpToAdd;
+                hpRegenAccumulator -= hpToAdd;
+            }
+
+            energyRegenAccumulator += playerData.EnergyRegenRate * Time.deltaTime;
+            int energyToAdd = (int)energyRegenAccumulator;
+            if (energyToAdd > 0)
+            {
+                playerData.PlayerEnergy += energyToAdd;
+                energyRegenAccumulator -= energyToAdd;
+            }
+
+            if (debug && (hpToAdd > 0 || energyToAdd > 0))
+            {
+                Debug.Log($"Regenerated: HP +{hpToAdd}, Energy +{energyToAdd}. Current: HP={playerData.PlayerHP}, Energy={playerData.PlayerEnergy}");
+            }
+        }
+
+        // Check for zero health or energy
+        if (playerData.PlayerEnergy == 0 && !playerData.EmergencyReservesPowerActive)
+        {
+            playerData.EmergencyReservesPower();
+            if (debug)
+                Debug.Log("Energy reached 0. Triggered EmergencyReservesPower.");
+        }
+
+        if (playerData.PlayerHP == 0 && !playerData.EmergencyReservesHealthActive)
+        {
+            playerData.EmergencyReservesHealth();
+            if (debug)
+                Debug.Log("Health reached 0. Triggered EmergencyReservesHealth.");
+        }
+
+        // Process movement input
         if (IsMovementEnabled)
         {
             float horizontal = Input.GetAxis("Horizontal");
@@ -107,10 +178,30 @@ public class PlayerController : MonoBehaviour
 
             if (debug && moveInput.magnitude > 0.1f)
                 Debug.Log($"Input: {moveInput}, Magnitude: {moveInput.magnitude}");
+
+            // Energy drain during movement
+            if (moveInput.magnitude > 0.1f && GameManager.Instance != null && GameManager.Instance.CurrentState == GameState.GamePlay)
+            {
+                energyDrainTimer += Time.deltaTime;
+                if (energyDrainTimer >= energyDrainInterval)
+                {
+                    playerData.PlayerEnergy -= 1;
+                    energyDrainTimer -= energyDrainInterval;
+                    if (debug)
+                        Debug.Log($"Drained 1 energy. Remaining energy: {playerData.PlayerEnergy}, Timer: {energyDrainTimer}");
+                }
+            }
+            else
+            {
+                energyDrainTimer = 0f;
+            }
         }
         else
         {
             moveInput = Vector3.zero;
+            energyDrainTimer = 0f;
+            if (debug)
+                Debug.Log("Movement disabled: moveInput set to zero.");
         }
 
         if (storageFullCooldown > 0f)
@@ -129,6 +220,7 @@ public class PlayerController : MonoBehaviour
         }
         ApplyBuoyancyAndWaterMotion();
     }
+
     private void MovePlayer()
     {
         Vector3 moveDirection = CameraRelativeDirection(moveInput);
@@ -146,30 +238,25 @@ public class PlayerController : MonoBehaviour
     {
         time += Time.fixedDeltaTime;
 
-        // Apply buoyancy to keep boat at target Y position
         float yError = targetY - transform.position.y;
         float buoyancy = yError * buoyancyForce - rb.linearVelocity.y * 2f;
         rb.AddForce(Vector3.up * buoyancy, ForceMode.Acceleration);
 
-        // Apply vertical bobbing
         if (bobAmplitude > 0)
         {
             float bobOffset = Mathf.Sin(time * bobFrequency * 2f * Mathf.PI) * bobAmplitude;
             rb.AddForce(Vector3.up * bobOffset * buoyancyForce, ForceMode.Acceleration);
         }
 
-        // Compute target pitch and roll
         float targetPitch, targetRoll;
         Vector3 currentEuler = rb.rotation.eulerAngles;
         float yaw = currentEuler.y;
 
         if (isCorrectingToNaturalAngle)
         {
-            // Correct to natural angle (-5, 0, 0)
             targetPitch = -5f;
             targetRoll = 0f;
 
-            // Check if close enough to stop correction
             float currentPitch = NormalizeAngle(currentEuler.x);
             float currentRoll = NormalizeAngle(currentEuler.z);
             if (Mathf.Abs(currentPitch - targetPitch) < 0.1f && Mathf.Abs(currentRoll - targetRoll) < 0.1f)
@@ -181,20 +268,16 @@ public class PlayerController : MonoBehaviour
         }
         else
         {
-            // Apply wave-like motion around natural angle
             targetRoll = Mathf.Sin(time * rollFrequency * 2f * Mathf.PI) * rollAmplitude;
-            targetPitch = Mathf.Cos(time * pitchFrequency * 2f * Mathf.PI) * pitchAmplitude - 5f; // Oscillate around -5
+            targetPitch = Mathf.Cos(time * pitchFrequency * 2f * Mathf.PI) * pitchAmplitude - 5f;
         }
 
-        // Clamp angles to limits (X: -25 to 25, Z: -20 to 20)
         targetPitch = Mathf.Clamp(targetPitch, -25f, 25f);
         targetRoll = Mathf.Clamp(targetRoll, -20f, 20f);
 
-        // Normalize angles
         float normalizedPitch = NormalizeAngle(targetPitch);
         float normalizedRoll = NormalizeAngle(targetRoll);
 
-        // Apply rotation with smooth interpolation
         Quaternion targetRotation = Quaternion.Euler(normalizedPitch, yaw, normalizedRoll);
         rb.rotation = Quaternion.Slerp(rb.rotation, targetRotation, Time.fixedDeltaTime * (isCorrectingToNaturalAngle ? collisionCorrectionSpeed : 2f));
 
@@ -207,10 +290,10 @@ public class PlayerController : MonoBehaviour
         Vector3 moveDirection = CameraRelativeDirection(moveInput);
         Quaternion targetYaw = Quaternion.LookRotation(moveDirection, Vector3.up);
         Vector3 euler = targetYaw.eulerAngles;
-        euler.x = rb.rotation.eulerAngles.x; // Preserve current pitch
-        euler.z = rb.rotation.eulerAngles.z; // Preserve current roll
+        euler.x = rb.rotation.eulerAngles.x;
+        euler.z = rb.rotation.eulerAngles.z;
         targetYaw = Quaternion.Euler(euler);
-        rb.rotation = Quaternion.Slerp(rb.rotation, targetYaw, Time.fixedDeltaTime * rotationSpeed / 360f); // Scale rotationSpeed
+        rb.rotation = Quaternion.Slerp(rb.rotation, targetYaw, Time.fixedDeltaTime * rotationSpeed / 360f);
     }
 
     private Vector3 CameraRelativeDirection(Vector3 input)
@@ -231,8 +314,21 @@ public class PlayerController : MonoBehaviour
 
     private void HandleTrashInteraction()
     {
-        if (trashInteractionSystem == null || trashInteractionSystem.ClosestTrash == null)
+        if (trashInteractionSystem == null || trashInteractionSystem.ClosestTrash == null || playerData == null)
             return;
+
+        // Block trash collection if health or energy is 0
+        if (playerData.PlayerHP == 0 || playerData.PlayerEnergy == 0)
+        {
+            if (storageFullCooldown <= 0f)
+            {
+                trashInteractionSystem.CanvasInstance.ShowTempMessage("Cannot collect: Health or Energy depleted", 1f);
+                storageFullCooldown = 1f;
+                if (debug)
+                    Debug.Log("Cannot collect trash: Health or Energy is 0");
+            }
+            return;
+        }
 
         InteractableTrash closest = trashInteractionSystem.ClosestTrash;
         TrashProperties properties = closest.TrashProperties;
@@ -241,9 +337,8 @@ public class PlayerController : MonoBehaviour
             return;
 
         int points = properties.GetPoints();
-        bool canCollect = playerData != null && playerData.CurrentTrash + points <= playerData.PlayerStorage;
+        bool canCollect = playerData.CurrentTrash + points <= playerData.PlayerStorage;
 
-        // Surface Trash: Tap E to collect
         if (closest.gameObject.layer == LayerMask.NameToLayer("Trash") && Input.GetKeyDown(KeyCode.E))
         {
             if (canCollect)
@@ -257,12 +352,11 @@ public class PlayerController : MonoBehaviour
             else if (storageFullCooldown <= 0f)
             {
                 trashInteractionSystem.CanvasInstance.ShowTempMessage("Storage Full", 1f);
-                storageFullCooldown = 1f; // Prevent spamming message
+                storageFullCooldown = 1f;
                 if (debug)
                     Debug.Log("Cannot collect surface trash: Storage full");
             }
         }
-        // UnderWaterTrash: Hold E for specific duration
         else if (closest.gameObject.layer == LayerMask.NameToLayer("UnderWaterTrash"))
         {
             if (Input.GetKey(KeyCode.E))
@@ -285,7 +379,7 @@ public class PlayerController : MonoBehaviour
                     else if (storageFullCooldown <= 0f)
                     {
                         trashInteractionSystem.CanvasInstance.ShowTempMessage("Storage Full", 1f);
-                        storageFullCooldown = 1f; // Prevent spamming message
+                        storageFullCooldown = 1f;
                         holdTimer = 0f;
                         isHoldingE = false;
                         if (debug)
@@ -318,13 +412,11 @@ public class PlayerController : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        // Trigger correction to natural angle on collision
         isCorrectingToNaturalAngle = true;
         if (debug)
             Debug.Log($"Collision detected with {collision.gameObject.name}. Correcting to natural angle (-5, 0, 0)");
     }
 
-    // Helper method to normalize angles to the range [-180, 180]
     private float NormalizeAngle(float angle)
     {
         while (angle > 180f) angle -= 360f;

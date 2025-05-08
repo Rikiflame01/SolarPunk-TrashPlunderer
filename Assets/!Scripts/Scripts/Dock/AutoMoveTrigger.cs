@@ -101,6 +101,8 @@ public class AutoMoveTrigger : MonoBehaviour
         {
             if (triggerTag == "TargetTrigger" && !isMovingToExit)
             {
+                GameManager.Instance.ToggleShopCanvas();
+                GameManager.Instance.SetGameState(GameState.Shop);
                 hasReachedTarget = true;
                 canTriggerExit = true;
                 playerRigidbody.linearVelocity = Vector3.zero;
@@ -130,6 +132,8 @@ public class AutoMoveTrigger : MonoBehaviour
                 canTriggerExit = false;
                 ActionManager.InvokeDockingComplete();
                 playerController.IsMovementEnabled = true; // Re-enable player movement immediately
+                GameManager.Instance.ToggleShopCanvas();
+                GameManager.Instance.SetGameState(GameState.GamePlay);
                 StartCoroutine(CompleteAndCooldown()); // Start cooldown process
                 if (debug)
                     Debug.Log("Player reached exit trigger. Invoked DockingComplete and started cooldown.");
