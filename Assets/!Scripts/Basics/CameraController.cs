@@ -26,6 +26,9 @@ public class CameraController : MonoBehaviour
     [SerializeField, Tooltip("Layer mask for ground collision detection")]
     private LayerMask groundLayer;
 
+    [SerializeField, Tooltip("Enable debug logs")]
+    private bool debug = false;
+
     private float currentYaw;
     private float currentPitch;
 
@@ -45,6 +48,10 @@ public class CameraController : MonoBehaviour
             else
                 Debug.LogWarning("Ground layer not found! Please assign the Ground layer in the Inspector.");
         }
+
+        // Validate GameManager
+        if (GameManager.Instance == null)
+            Debug.LogError("GameManager instance is null! Ensure GameManager is in the scene.");
     }
 
     void LateUpdate()
@@ -52,10 +59,21 @@ public class CameraController : MonoBehaviour
         if (target == null)
             return;
 
-        // Get mouse input for rotation
-        currentYaw += Input.GetAxis("Mouse X") * yawSensitivity * Time.deltaTime;
-        currentPitch -= Input.GetAxis("Mouse Y") * pitchSensitivity * Time.deltaTime;
-        currentPitch = Mathf.Clamp(currentPitch, minPitch, maxPitch);
+        // Only process mouse input during GamePlay state
+        if (GameManager.Instance != null && GameManager.Instance.CurrentState == GameState.GamePlay)
+        {
+            // Get mouse input for rotation
+            currentYaw += Input.GetAxis("Mouse X") * yawSensitivity * Time.deltaTime;
+            currentPitch -= Input.GetAxis("Mouse Y") * pitchSensitivity * Time.deltaTime;
+            currentPitch = Mathf.Clamp(currentPitch, minPitch, maxPitch);
+
+            if (debug)
+                Debug.Log($"CameraController: Mouse input processed - Yaw={currentYaw:F2}, Pitch={currentPitch:F2}");
+        }
+        else if (debug && GameManager.Instance != null)
+        {
+            Debug.Log($"CameraController: Mouse input ignored in state {GameManager.Instance.CurrentState}");
+        }
 
         // Calculate desired camera position
         Quaternion rotation = Quaternion.Euler(currentPitch, currentYaw, 0);

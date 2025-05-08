@@ -50,6 +50,10 @@ public class PlayerData : ScriptableObject
         set => playerEnergy = Mathf.Clamp(value, 0, maxPlayerEnergy);
     }
 
+    public int MaxPlayerHP => maxPlayerHP;
+
+    public int MaxPlayerEnergy => maxPlayerEnergy;
+
     public float HpRegenRate => hpRegenRate;
     public float EnergyRegenRate => energyRegenRate;
 
