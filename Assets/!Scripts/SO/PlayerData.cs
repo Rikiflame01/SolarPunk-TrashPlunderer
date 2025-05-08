@@ -18,7 +18,6 @@ public class PlayerData : ScriptableObject
     [SerializeField] private int playerSpeed = 5;
 
     [SerializeField] private int maxPlayerSpeed = 5;
-    [SerializeField] private int playerStorage = 5;
     [SerializeField] private int maxPlayerStorage = 5;
     [SerializeField] private int currentTrash = 0;
 
@@ -63,10 +62,10 @@ public class PlayerData : ScriptableObject
         set => playerSpeed = Mathf.Max(0, value);
     }
 
-    public int PlayerStorage
+    public int MaxPlayerStorage
     {
-        get => playerStorage;
-        set => playerStorage = Mathf.Max(0, value);
+        get => maxPlayerStorage;
+        set => maxPlayerStorage = Mathf.Max(0, value);
     }
 
     public int CurrentTrash
@@ -116,6 +115,7 @@ public class PlayerData : ScriptableObject
 
     public void SaveCurrentStats()
     {
+        PlayerPrefs.SetInt("CurrentTrash", currentTrash);
         PlayerPrefs.SetInt("TrashNetUnlocked", trashNetUnlocked ? 1 : 0);
         PlayerPrefs.SetInt("IceBreakerUnlocked", iceBreakerUnlocked ? 1 : 0);
         PlayerPrefs.SetInt("SpeedBurstUnlocked", speedBurstUnlocked ? 1 : 0);
@@ -126,7 +126,8 @@ public class PlayerData : ScriptableObject
     public void LoadSavedStats()
     {
             playerSpeed = maxPlayerSpeed;
-            playerStorage = maxPlayerStorage;
+
+            //currentTrash = PlayerPrefs.GetInt("CurrentTrash", 0); Use this for the trash drop
             trashNetUnlocked = PlayerPrefs.GetInt("TrashNetUnlocked", 0) == 1;
             iceBreakerUnlocked = PlayerPrefs.GetInt("IceBreakerUnlocked", 0) == 1;
             speedBurstUnlocked = PlayerPrefs.GetInt("SpeedBurstUnlocked", 0) == 1;
@@ -182,8 +183,7 @@ public class PlayerData : ScriptableObject
     {
         playerHP = 100;
         playerEnergy = 10;
-        playerSpeed = 5;
-        playerStorage = 5;
+        maxPlayerStorage = 5;
         maxPlayerHP = 100;
         maxPlayerEnergy = 10;
         maxPlayerSpeed = 5;
@@ -202,5 +202,6 @@ public class PlayerData : ScriptableObject
     void OnEnable()
     {
         ResetData();
+        PlayerPrefs.DeleteAll();
     }
 }

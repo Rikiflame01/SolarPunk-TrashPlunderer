@@ -101,7 +101,7 @@ public class ShopManager : MonoBehaviour
                 playerData.PlayerSpeed += 1;
                 break;
             case "storage":
-                playerData.PlayerStorage += 5;
+                playerData.MaxPlayerStorage += 5;
                 break;
             default:
                 Debug.LogWarning($"Invalid stat name: {statName}");
@@ -267,7 +267,7 @@ public class ShopManager : MonoBehaviour
             case "hp": return playerData.PlayerHP;
             case "energy": return playerData.PlayerEnergy;
             case "speed": return playerData.PlayerSpeed;
-            case "storage": return playerData.PlayerStorage;
+            case "storage": return playerData.CurrentTrash;
             default: return 0;
         }
     }

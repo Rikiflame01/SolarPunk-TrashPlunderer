@@ -354,7 +354,7 @@ public class PlayerController : MonoBehaviour
             return;
 
         int points = properties.GetPoints();
-        bool canCollect = playerData.CurrentTrash + points <= playerData.PlayerStorage;
+        bool canCollect = playerData.CurrentTrash + points <= playerData.MaxPlayerStorage;
 
         if (closest.gameObject.layer == LayerMask.NameToLayer("Trash") && Input.GetKeyDown(KeyCode.E))
         {
