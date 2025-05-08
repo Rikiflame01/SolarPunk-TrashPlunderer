@@ -4,6 +4,8 @@ using System.Collections;
 
 public class AutoMoveTrigger : MonoBehaviour
 {
+    [SerializeField] private PlayerData playerData;
+
     [SerializeField, Tooltip("Target transform to move the player to when inside the trigger")]
     private Transform targetTransform;
 
@@ -129,6 +131,8 @@ public class AutoMoveTrigger : MonoBehaviour
                         Debug.Log($"CommunicationCanvas disabled for exit trigger: {communicationCanvas.activeSelf}");
                 }
 
+                playerData.LoadSavedStats();
+                
                 canTriggerExit = false;
                 ActionManager.InvokeDockingComplete();
                 playerController.IsMovementEnabled = true; // Re-enable player movement immediately

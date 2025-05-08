@@ -121,10 +121,6 @@ public class PlayerData : ScriptableObject
 
     public void LoadSavedStats()
     {
-        if (PlayerPrefs.HasKey("PlayerMaxHP"))
-        {
-            playerHP = maxPlayerHP;
-            playerEnergy = maxPlayerEnergy;
             playerSpeed = maxPlayerSpeed;
             playerStorage = maxPlayerStorage;
             trashNetUnlocked = PlayerPrefs.GetInt("TrashNetUnlocked", 0) == 1;
@@ -135,20 +131,14 @@ public class PlayerData : ScriptableObject
             emergencyReservesHealth = false;
 
             Debug.Log("Player stats loaded from PlayerPrefs.");
-        }
-        else
-        {
-            ResetData();
-            Debug.Log("No saved stats found. Reset to default values.");
-        }
     }
 
     public void EmergencyReservesPower()
     {
         if (!emergencyReservesPower)
         {
+            SaveCurrentStats();
             emergencyReservesPower = true;
-            playerHP = 5;
             playerSpeed = 2;
             ExpelTrash();
             DisableSpecialAbilities();
@@ -160,6 +150,7 @@ public class PlayerData : ScriptableObject
     {
         if (!emergencyReservesHealth)
         {
+            SaveCurrentStats();
             emergencyReservesHealth = true;
             playerHP = 5;
             playerSpeed = 2;

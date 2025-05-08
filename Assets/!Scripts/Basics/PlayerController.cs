@@ -6,6 +6,9 @@ public class PlayerController : MonoBehaviour
     [SerializeField, Tooltip("Player data ScriptableObject")]
     private PlayerData playerData;
 
+    [SerializeField, Tooltip("Light manager for time of day")]
+    private LightManager lightManager;
+
     private float hpRegenAccumulator = 0f;
     private float energyRegenAccumulator = 0f;
 
@@ -94,6 +97,9 @@ public class PlayerController : MonoBehaviour
         if (trashInteractionSystem == null)
             Debug.LogError("TrashInteractionSystem not assigned!");
 
+        if (lightManager == null)
+            Debug.LogError("LightManager not assigned! Energy regeneration will not be time-restricted.");
+
         time = Random.Range(0f, 10f);
         isCorrectingToNaturalAngle = false;
         naturalRotation = Quaternion.Euler(-5f, 0f, 0f);
@@ -109,6 +115,8 @@ public class PlayerController : MonoBehaviour
                 Debug.Log($"Initial GameState: {GameManager.Instance.CurrentState}, IsMovementEnabled: {IsMovementEnabled}");
             else
                 Debug.LogError("GameManager.Instance is null!");
+            if (lightManager != null)
+                Debug.Log($"Initial TimeOfDay: {lightManager.TimeOfDay}");
         }
     }
 
@@ -132,6 +140,7 @@ public class PlayerController : MonoBehaviour
         // Regeneration in Shop state
         if (GameManager.Instance != null && GameManager.Instance.CurrentState == GameState.Shop)
         {
+            // Regenerate HP (not time-restricted)
             hpRegenAccumulator += playerData.HpRegenRate * Time.deltaTime;
             int hpToAdd = (int)hpRegenAccumulator;
             if (hpToAdd > 0)
@@ -140,17 +149,25 @@ public class PlayerController : MonoBehaviour
                 hpRegenAccumulator -= hpToAdd;
             }
 
-            energyRegenAccumulator += playerData.EnergyRegenRate * Time.deltaTime;
-            int energyToAdd = (int)energyRegenAccumulator;
-            if (energyToAdd > 0)
+            // Regenerate Energy (only during daytime: 350 ≤ TimeOfDay < 1100)
+            if (lightManager != null && lightManager.TimeOfDay >= 350f && lightManager.TimeOfDay < 1100f)
             {
-                playerData.PlayerEnergy += energyToAdd;
-                energyRegenAccumulator -= energyToAdd;
-            }
+                energyRegenAccumulator += playerData.EnergyRegenRate * Time.deltaTime;
+                int energyToAdd = (int)energyRegenAccumulator;
+                if (energyToAdd > 0)
+                {
+                    playerData.PlayerEnergy += energyToAdd;
+                    energyRegenAccumulator -= energyToAdd;
+                }
 
-            if (debug && (hpToAdd > 0 || energyToAdd > 0))
+                if (debug && (hpToAdd > 0 || energyToAdd > 0))
+                {
+                    Debug.Log($"Regenerated (Daytime): HP +{hpToAdd}, Energy +{energyToAdd}. Current: HP={playerData.PlayerHP}, Energy={playerData.PlayerEnergy}, TimeOfDay={lightManager.TimeOfDay}");
+                }
+            }
+            else if (debug && hpToAdd > 0)
             {
-                Debug.Log($"Regenerated: HP +{hpToAdd}, Energy +{energyToAdd}. Current: HP={playerData.PlayerHP}, Energy={playerData.PlayerEnergy}");
+                Debug.Log($"Regenerated (Nighttime): HP +{hpToAdd}, Energy +0 (not daytime). Current: HP={playerData.PlayerHP}, Energy={playerData.PlayerEnergy}, TimeOfDay={(lightManager != null ? lightManager.TimeOfDay.ToString() : "N/A")}");
             }
         }
 

@@ -2366,6 +2366,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 37346af1d1034894d8e5d2fc3688ebb0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  playerData: {fileID: 11400000, guid: a34469df995d4e244a949fe15d1e54d2, type: 2}
   targetTransform: {fileID: 1259103664}
   exitTransform: {fileID: 980132836}
   moveSpeed: 5
@@ -7374,6 +7375,17 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 2567828311121327449, guid: b800db02f431144a888abcdf4a2e8c72, type: 3}
   m_PrefabInstance: {fileID: 1996489619}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &681817348 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3364325394453186254, guid: 3940a4795f91c674fb48d6d4e299297a, type: 3}
+  m_PrefabInstance: {fileID: 189825150}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 77d5c9cbe46151149aa85521c309f307, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!224 &683238524 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 4060110888966784596, guid: 80691689d540f412aa9dcb7e611cebc4, type: 3}
@@ -12567,6 +12579,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerData: {fileID: 11400000, guid: a34469df995d4e244a949fe15d1e54d2, type: 2}
+  lightManager: {fileID: 681817348}
   rotateToMovement: 1
   rotationSpeed: 720
   mainCamera: {fileID: 571816571}
