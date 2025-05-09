@@ -78,6 +78,14 @@ public class HPIndicator : MonoBehaviour
     {
         if (playerData == null || hpSlider == null) return;
 
+        // Update slider max value to reflect current MaxPlayerHP
+        if (hpSlider.maxValue != playerData.MaxPlayerHP)
+        {
+            hpSlider.maxValue = playerData.MaxPlayerHP;
+            if (debug)
+                Debug.Log($"HPIndicator: Updated maxValue to {playerData.MaxPlayerHP}");
+        }
+
         // Update target value
         targetValue = playerData.PlayerHP;
 

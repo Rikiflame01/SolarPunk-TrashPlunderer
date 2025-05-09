@@ -16,10 +16,10 @@ public class PlayerData : ScriptableObject
     [SerializeField] private int playerEnergy = 10;
     [SerializeField] private int maxPlayerEnergy = 10;
     [SerializeField] private int playerSpeed = 5;
-
     [SerializeField] private int maxPlayerSpeed = 5;
     [SerializeField] private int maxPlayerStorage = 5;
     [SerializeField] private int currentTrash = 0;
+    [SerializeField] private int recyclePoints = 0;
 
     [Header("Special Unlocks")]
     [SerializeField] private bool trashNetUnlocked = false;
@@ -28,19 +28,27 @@ public class PlayerData : ScriptableObject
     [SerializeField] private UnlockLevel iceBreakerLevel = UnlockLevel.Level1;
     [SerializeField] private bool speedBurstUnlocked = false;
     [SerializeField] private UnlockLevel speedBurstLevel = UnlockLevel.Level1;
+    [SerializeField] private bool magnetUnlocked = false;
+    [SerializeField] private bool solarPanelUnlocked = false;
 
-    [Header("Emergency States")]
-    [SerializeField] private bool emergencyReservesPower = false;
-    [SerializeField] private bool emergencyReservesHealth = false;
+    [Header("Upgrade Levels")]
+    [SerializeField] private int speedUpgradeLevel = 0; // 0 to 3
+    [SerializeField] private int storageUpgradeLevel = 0; // 0 to 4, then additional upgrades
+    [SerializeField] private int energyUpgradeLevel = 0; // 0 to 4
+    [SerializeField] private int maxLifeUpgradeLevel = 0; // 0 to 4
+    [SerializeField] private int enginePowerLevel = 0; // 0 to 3
 
-    [Header("Regeneration Rates")]
-    [SerializeField] private float hpRegenRate = 5f; // HP per second
-    [SerializeField] private float energyRegenRate = 1f; // Energy per second
-
+    #region Properties
     public int PlayerHP
     {
         get => playerHP;
         set => playerHP = Mathf.Clamp(value, 0, maxPlayerHP);
+    }
+
+    public int MaxPlayerHP
+    {
+        get => maxPlayerHP;
+        set => maxPlayerHP = Mathf.Max(0, value);
     }
 
     public int PlayerEnergy
@@ -49,17 +57,22 @@ public class PlayerData : ScriptableObject
         set => playerEnergy = Mathf.Clamp(value, 0, maxPlayerEnergy);
     }
 
-    public int MaxPlayerHP => maxPlayerHP;
-
-    public int MaxPlayerEnergy => maxPlayerEnergy;
-
-    public float HpRegenRate => hpRegenRate;
-    public float EnergyRegenRate => energyRegenRate;
+    public int MaxPlayerEnergy
+    {
+        get => maxPlayerEnergy;
+        set => maxPlayerEnergy = Mathf.Max(0, value);
+    }
 
     public int PlayerSpeed
     {
         get => playerSpeed;
         set => playerSpeed = Mathf.Max(0, value);
+    }
+
+    public int MaxPlayerSpeed
+    {
+        get => maxPlayerSpeed;
+        set => maxPlayerSpeed = Mathf.Max(0, value);
     }
 
     public int MaxPlayerStorage
@@ -74,16 +87,16 @@ public class PlayerData : ScriptableObject
         set => currentTrash = Mathf.Max(0, value);
     }
 
+    public int RecyclePoints
+    {
+        get => recyclePoints;
+        set => recyclePoints = Mathf.Max(0, value);
+    }
+
     public bool TrashNetUnlocked
     {
         get => trashNetUnlocked;
         set => trashNetUnlocked = value;
-    }
-
-    public UnlockLevel TrashNetLevel
-    {
-        get => trashNetLevel;
-        set => trashNetLevel = value;
     }
 
     public bool IceBreakerUnlocked
@@ -92,27 +105,68 @@ public class PlayerData : ScriptableObject
         set => iceBreakerUnlocked = value;
     }
 
-    public UnlockLevel IceBreakerLevel
-    {
-        get => iceBreakerLevel;
-        set => iceBreakerLevel = value;
-    }
-
     public bool SpeedBurstUnlocked
     {
         get => speedBurstUnlocked;
         set => speedBurstUnlocked = value;
     }
 
-    public UnlockLevel SpeedBurstLevel
+    public bool MagnetUnlocked
     {
-        get => speedBurstLevel;
-        set => speedBurstLevel = value;
+        get => magnetUnlocked;
+        set => magnetUnlocked = value;
     }
 
+    public bool SolarPanelUnlocked
+    {
+        get => solarPanelUnlocked;
+        set => solarPanelUnlocked = value;
+    }
+
+    public int SpeedUpgradeLevel
+    {
+        get => speedUpgradeLevel;
+        set => speedUpgradeLevel = Mathf.Clamp(value, 0, 3);
+    }
+
+    public int StorageUpgradeLevel
+    {
+        get => storageUpgradeLevel;
+        set => storageUpgradeLevel = value; // Allow beyond 4 for additional upgrades
+    }
+
+    public int EnergyUpgradeLevel
+    {
+        get => energyUpgradeLevel;
+        set => energyUpgradeLevel = Mathf.Clamp(value, 0, 4);
+    }
+
+    public int MaxLifeUpgradeLevel
+    {
+        get => maxLifeUpgradeLevel;
+        set => maxLifeUpgradeLevel = Mathf.Clamp(value, 0, 4);
+    }
+
+    public int EnginePowerLevel
+    {
+        get => enginePowerLevel;
+        set => enginePowerLevel = Mathf.Clamp(value, 0, 3);
+    }
+    #endregion
+
+    
+    [Header("Regeneration Rates")]
+    [SerializeField] private float hpRegenRate = 5f; // HP per second
+    [SerializeField] private float energyRegenRate = 1f; // Energy per second
+    
+    [Header("Emergency States")]
+    [SerializeField] private bool emergencyReservesPower = false;
+    [SerializeField] private bool emergencyReservesHealth = false;
     public bool EmergencyReservesPowerActive => emergencyReservesPower;
     public bool EmergencyReservesHealthActive => emergencyReservesHealth;
 
+    public float HpRegenRate => hpRegenRate;
+    public float EnergyRegenRate => energyRegenRate;
     public void SaveCurrentStats()
     {
         PlayerPrefs.SetInt("CurrentTrash", currentTrash);
@@ -181,6 +235,7 @@ public class PlayerData : ScriptableObject
 
     public void ResetData()
     {
+        recyclePoints = 0;
         playerHP = 100;
         playerEnergy = 10;
         maxPlayerStorage = 5;

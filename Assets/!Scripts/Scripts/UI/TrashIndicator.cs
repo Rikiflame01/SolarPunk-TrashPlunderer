@@ -78,6 +78,14 @@ public class TrashIndicator : MonoBehaviour
     {
         if (playerData == null || trashSlider == null) return;
 
+        // Update slider max value to reflect current MaxPlayerStorage
+        if (trashSlider.maxValue != playerData.MaxPlayerStorage)
+        {
+            trashSlider.maxValue = playerData.MaxPlayerStorage;
+            if (debug)
+                Debug.Log($"TrashIndicator: Updated maxValue to {playerData.MaxPlayerStorage}");
+        }
+
         // Update target value
         targetValue = playerData.CurrentTrash;
 

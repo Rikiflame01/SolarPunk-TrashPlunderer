@@ -78,6 +78,14 @@ public class EnergyIndicator : MonoBehaviour
     {
         if (playerData == null || energySlider == null) return;
 
+        // Update slider max value to reflect current MaxPlayerEnergy
+        if (energySlider.maxValue != playerData.MaxPlayerEnergy)
+        {
+            energySlider.maxValue = playerData.MaxPlayerEnergy;
+            if (debug)
+                Debug.Log($"EnergyIndicator: Updated maxValue to {playerData.MaxPlayerEnergy}");
+        }
+
         // Update target value
         targetValue = playerData.PlayerEnergy;
 

@@ -1,274 +1,373 @@
 using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
+using System.Collections;
 using System;
 using System.Collections.Generic;
 
 public class ShopManager : MonoBehaviour
 {
-    [Serializable]
-    public struct StatPrice
-    {
-        public string statName; // e.g., "hp", "energy", "speed", "storage"
-        public int basePrice; // Initial cost in currentTrash
-        public float priceMultiplier; // Multiplier after each purchase (e.g., 2 for 2x)
-    }
+    [SerializeField] private PlayerData playerData;
+    [SerializeField] private Button recycleButton;
+    [SerializeField] private Button speedButton;
+    [SerializeField] private Button enginePowerButton;
+    [SerializeField] private Button storageButton;
+    [SerializeField] private Button energyButton;
+    [SerializeField] private Button maxLifeButton;
+    [SerializeField] private Button netButton;
+    [SerializeField] private Button magnetButton;
+    [SerializeField] private Button solarPanelButton;
+    [SerializeField] private Button iceBreakerButton;
+    [SerializeField] private TextMeshProUGUI currentPointsText;
+    [SerializeField] private ConfirmationPrompt confirmationPrompt;
 
-    [Serializable]
-    public struct SpecialPrice
+    #region Upgrade Data
+    private int[] speedUpgradeCosts = { 50, 75, 150 };
+    private int[] speedUpgradeEffects = { 2, 4, 4 };
+    private int[] enginePowerUpgradeCosts = { 100, 200, 300 };
+    private int[] energyUpgradeCosts = { 50, 100, 150, 200 };
+    private int[] energyUpgradeEffects = { 5, 10, 15, 20 };
+    private int[] maxLifeUpgradeCosts = { 50, 75, 100, 150 };
+    private int[] maxLifeUpgradeEffects = { 5, 10, 15, 20 };
+    private int[] storageUpgradeCosts = { 25, 50, 75, 100 };
+    private int[] storageUpgradeEffects = { 5, 10, 15, 20 };
+    private const int ADDITIONAL_STORAGE_COST = 100;
+    private const int ADDITIONAL_STORAGE_EFFECT = 10;
+    private readonly Dictionary<string, int> specialUnlockCosts = new Dictionary<string, int>
     {
-        public string specialName; // e.g., "trashnet", "icebreaker", "speedburst"
-        public int unlockBasePrice; // Initial cost to unlock
-        public int upgradeBasePrice; // Initial cost to upgrade
-        public float unlockPriceMultiplier; // Multiplier after unlocking
-        public float upgradePriceMultiplier; // Multiplier after each upgrade
-    }
-
-    [SerializeField, Tooltip("PlayerData ScriptableObject to modify")]
-    private PlayerData playerData;
-
-    [SerializeField, Tooltip("Pricing for stat increases/decreases")]
-    private StatPrice[] statPrices = new StatPrice[]
-    {
-        new StatPrice { statName = "hp", basePrice = 10, priceMultiplier = 2f },
-        new StatPrice { statName = "energy", basePrice = 15, priceMultiplier = 2f },
-        new StatPrice { statName = "speed", basePrice = 20, priceMultiplier = 1.5f },
-        new StatPrice { statName = "storage", basePrice = 25, priceMultiplier = 2f }
+        { "net", 200 },
+        { "magnet", 300 },
+        { "solarPanel", 400 },
+        { "iceBreaker", 500 }
     };
+    #endregion
 
-    [SerializeField, Tooltip("Pricing for special ability unlocks and upgrades")]
-    private SpecialPrice[] specialPrices = new SpecialPrice[]
+    private void Start()
     {
-        new SpecialPrice { specialName = "trashnet", unlockBasePrice = 50, upgradeBasePrice = 20, unlockPriceMultiplier = 2f, upgradePriceMultiplier = 2f },
-        new SpecialPrice { specialName = "icebreaker", unlockBasePrice = 60, upgradeBasePrice = 25, unlockPriceMultiplier = 2f, upgradePriceMultiplier = 2f },
-        new SpecialPrice { specialName = "speedburst", unlockBasePrice = 70, upgradeBasePrice = 30, unlockPriceMultiplier = 2f, upgradePriceMultiplier = 2f }
-    };
+        // Assign button listeners
+        recycleButton.onClick.AddListener(OnRecycleButtonPressed);
+        speedButton.onClick.AddListener(OnSpeedButtonPressed);
+        enginePowerButton.onClick.AddListener(OnEnginePowerButtonPressed);
+        storageButton.onClick.AddListener(OnStorageButtonPressed);
+        energyButton.onClick.AddListener(OnEnergyButtonPressed);
+        maxLifeButton.onClick.AddListener(OnMaxLifeButtonPressed);
+        netButton.onClick.AddListener(() => OnSpecialButtonPressed("net"));
+        magnetButton.onClick.AddListener(() => OnSpecialButtonPressed("magnet"));
+        solarPanelButton.onClick.AddListener(() => OnSpecialButtonPressed("solarPanel"));
+        iceBreakerButton.onClick.AddListener(() => OnSpecialButtonPressed("iceBreaker"));
 
-    // Track current prices (updated after purchases)
-    private Dictionary<string, int> currentStatPrices = new Dictionary<string, int>();
-    private Dictionary<string, int> currentUnlockPrices = new Dictionary<string, int>();
-    private Dictionary<string, int> currentUpgradePrices = new Dictionary<string, int>();
-
-    private void Awake()
-    {
-        // Initialize current prices from base prices
-        foreach (var statPrice in statPrices)
-        {
-            currentStatPrices[statPrice.statName.ToLower()] = statPrice.basePrice;
-        }
-
-        foreach (var specialPrice in specialPrices)
-        {
-            currentUnlockPrices[specialPrice.specialName.ToLower()] = specialPrice.unlockBasePrice;
-            currentUpgradePrices[specialPrice.specialName.ToLower()] = specialPrice.upgradeBasePrice;
-        }
-
-        // Subscribe to game state changes
-        GameManager.OnGameStateChanged += OnGameStateChanged;
+        UpdateUI();
     }
 
-    private void OnDestroy()
+    private void Update()
     {
-        // Unsubscribe from events
-        GameManager.OnGameStateChanged -= OnGameStateChanged;
+        UpdateButtonTransparency();
     }
 
-    private void OnGameStateChanged(GameState newState)
+    #region UI Management
+    private void UpdateUI()
     {
-        // Enable/disable shop functionality based on state
-        enabled = newState == GameState.Shop;
+        currentPointsText.text = $"{playerData.RecyclePoints}";
     }
 
-    // Increase a stat (HP, Energy, Speed, Storage)
-    public void IncreaseStat(string statName)
+    private void UpdateButtonTransparency()
     {
-        statName = statName.ToLower();
-        if (!currentStatPrices.TryGetValue(statName, out int cost))
-        {
-            Debug.LogWarning($"Stat {statName} not found in pricing!");
-            return;
-        }
-
-        if (!CanAfford(cost)) return;
-
-        switch (statName)
-        {
-            case "hp":
-                playerData.PlayerHP += 10;
-                break;
-            case "energy":
-                playerData.PlayerEnergy += 5;
-                break;
-            case "speed":
-                playerData.PlayerSpeed += 1;
-                break;
-            case "storage":
-                playerData.MaxPlayerStorage += 5;
-                break;
-            default:
-                Debug.LogWarning($"Invalid stat name: {statName}");
-                return;
-        }
-
-        playerData.CurrentTrash -= cost;
-        UpdateStatPrice(statName);
-        Debug.Log($"Increased {statName} for {cost} trash. New value: {GetStatValue(statName)}, New trash: {playerData.CurrentTrash}, New price: {currentStatPrices[statName]}");
+        SetButtonTransparency(speedButton, CanAffordNextSpeedUpgrade());
+        SetButtonTransparency(enginePowerButton, CanAffordNextEnginePowerUpgrade());
+        SetButtonTransparency(storageButton, CanAffordNextStorageUpgrade());
+        SetButtonTransparency(energyButton, CanAffordNextEnergyUpgrade());
+        SetButtonTransparency(maxLifeButton, CanAffordNextMaxLifeUpgrade());
+        SetButtonTransparency(netButton, CanAffordSpecial("net") && !playerData.TrashNetUnlocked);
+        SetButtonTransparency(magnetButton, CanAffordSpecial("magnet") && !playerData.MagnetUnlocked);
+        SetButtonTransparency(solarPanelButton, CanAffordSpecial("solarPanel") && !playerData.SolarPanelUnlocked);
+        SetButtonTransparency(iceBreakerButton, CanAffordSpecial("iceBreaker") && !playerData.IceBreakerUnlocked);
     }
 
-    // Unlock a special ability
-    public void UnlockSpecial(string specialName)
+    private void SetButtonTransparency(Button button, bool canAfford)
     {
-        specialName = specialName.ToLower();
-        if (!currentUnlockPrices.TryGetValue(specialName, out int cost))
+        var buttonChild = button.transform.Find("Button");
+        if (buttonChild != null)
         {
-            Debug.LogWarning($"Special {specialName} not found in pricing!");
-            return;
+            var image = buttonChild.GetComponent<Image>();
+            if (image != null)
+            {
+                Color color = image.color;
+                color.a = canAfford ? 1f : 0.5f; // 50% transparency if unaffordable
+                image.color = color;
+            }
+            else
+            {
+                Debug.LogWarning($"No Image component found on 'Button' child of {button.name}");
+            }
         }
+        else
+        {
+            Debug.LogWarning($"No child named 'Button' found under {button.name}");
+        }
+    }
 
-        if (!CanAfford(cost)) return;
+    private IEnumerator MakeButtonRed(Button button)
+    {
+        var buttonChild = button.transform.Find("Button");
+        if (buttonChild != null)
+        {
+            var image = buttonChild.GetComponent<Image>();
+            if (image != null)
+            {
+                Color originalColor = image.color;
+                image.color = new Color(1f, 0f, 0f, originalColor.a); // Red, preserve alpha
+                yield return new WaitForSeconds(0.5f);
+                image.color = originalColor;
+                UpdateButtonTransparency(); // Reset transparency after red flash
+            }
+        }
+    }
 
+    private void ShowConfirmationPrompt(string message, Action onConfirm, bool canAfford)
+    {
+        confirmationPrompt.Show(message, onConfirm, canAfford);
+    }
+    #endregion
+
+    #region Button Handlers
+    public void OnRecycleButtonPressed()
+    {
+        int trashToConvert = playerData.CurrentTrash;
+        if (trashToConvert <= 0) return;
+
+        string message = $"Convert {trashToConvert} trash into {trashToConvert} recycle points?";
+        ShowConfirmationPrompt(message, () =>
+        {
+            playerData.RecyclePoints += trashToConvert;
+            playerData.CurrentTrash = 0;
+            UpdateUI();
+        }, true); // Recycle always affordable if trash > 0
+    }
+
+    public void OnSpeedButtonPressed()
+    {
+        int currentLevel = playerData.SpeedUpgradeLevel;
+        if (currentLevel >= 3) return;
+
+        int cost = speedUpgradeCosts[currentLevel];
+        bool canAfford = playerData.RecyclePoints >= cost;
+
+        int effect = speedUpgradeEffects[currentLevel];
+        string message = $"This will cost {cost} recycle points to upgrade max speed: {playerData.MaxPlayerSpeed} -> {playerData.MaxPlayerSpeed + effect}";
+        if (!canAfford)
+            message += "\nInsufficient recycle points!";
+        if (currentLevel == 2)
+            message += " and unlock Speed Burst special";
+
+        ShowConfirmationPrompt(message, () =>
+        {
+            playerData.RecyclePoints -= cost;
+            playerData.MaxPlayerSpeed += effect;
+            playerData.SpeedUpgradeLevel++;
+            if (currentLevel == 2)
+                playerData.SpeedBurstUnlocked = true;
+            UpdateUI();
+        }, canAfford);
+
+        if (!canAfford)
+        {
+            StartCoroutine(MakeButtonRed(speedButton));
+        }
+    }
+
+    public void OnEnginePowerButtonPressed()
+    {
+        int currentLevel = playerData.EnginePowerLevel;
+        if (currentLevel >= 3) return;
+
+        int cost = enginePowerUpgradeCosts[currentLevel];
+        bool canAfford = playerData.RecyclePoints >= cost;
+
+        string message = $"This will cost {cost} recycle points to upgrade engine power to level {currentLevel + 1}";
+        if (!canAfford)
+            message += "\nInsufficient recycle points!";
+
+        ShowConfirmationPrompt(message, () =>
+        {
+            playerData.RecyclePoints -= cost;
+            playerData.EnginePowerLevel++;
+            UpdateUI();
+        }, canAfford);
+
+        if (!canAfford)
+        {
+            StartCoroutine(MakeButtonRed(enginePowerButton));
+        }
+    }
+
+    public void OnStorageButtonPressed()
+    {
+        int currentLevel = playerData.StorageUpgradeLevel;
+        int cost = currentLevel < 4 ? storageUpgradeCosts[currentLevel] : ADDITIONAL_STORAGE_COST;
+        int effect = currentLevel < 4 ? storageUpgradeEffects[currentLevel] : ADDITIONAL_STORAGE_EFFECT;
+        bool canAfford = playerData.RecyclePoints >= cost;
+
+        string message = $"This will cost {cost} recycle points to upgrade storage: {playerData.MaxPlayerStorage} -> {playerData.MaxPlayerStorage + effect}";
+        if (!canAfford)
+            message += "\nInsufficient recycle points!";
+
+        ShowConfirmationPrompt(message, () =>
+        {
+            playerData.RecyclePoints -= cost;
+            playerData.MaxPlayerStorage += effect;
+            if (currentLevel < 4)
+                playerData.StorageUpgradeLevel++;
+            UpdateUI();
+        }, canAfford);
+
+        if (!canAfford)
+        {
+            StartCoroutine(MakeButtonRed(storageButton));
+        }
+    }
+
+    public void OnEnergyButtonPressed()
+    {
+        int currentLevel = playerData.EnergyUpgradeLevel;
+        if (currentLevel >= 4) return;
+
+        int cost = energyUpgradeCosts[currentLevel];
+        bool canAfford = playerData.RecyclePoints >= cost;
+
+        int effect = energyUpgradeEffects[currentLevel];
+        string message = $"This will cost {cost} recycle points to upgrade max energy: {playerData.MaxPlayerEnergy} -> {playerData.MaxPlayerEnergy + effect}";
+        if (!canAfford)
+            message += "\nInsufficient recycle points!";
+
+        ShowConfirmationPrompt(message, () =>
+        {
+            playerData.RecyclePoints -= cost;
+            playerData.MaxPlayerEnergy += effect;
+            playerData.EnergyUpgradeLevel++;
+            UpdateUI();
+        }, canAfford);
+
+        if (!canAfford)
+        {
+            StartCoroutine(MakeButtonRed(energyButton));
+        }
+    }
+
+    public void OnMaxLifeButtonPressed()
+    {
+        int currentLevel = playerData.MaxLifeUpgradeLevel;
+        if (currentLevel >= 4) return;
+
+        int cost = maxLifeUpgradeCosts[currentLevel];
+        bool canAfford = playerData.RecyclePoints >= cost;
+
+        int effect = maxLifeUpgradeEffects[currentLevel];
+        string message = $"This will cost {cost} recycle points to upgrade max HP: {playerData.MaxPlayerHP} -> {playerData.MaxPlayerHP + effect}";
+        if (!canAfford)
+            message += "\nInsufficient recycle points!";
+
+        ShowConfirmationPrompt(message, () =>
+        {
+            playerData.RecyclePoints -= cost;
+            playerData.MaxPlayerHP += effect;
+            playerData.MaxLifeUpgradeLevel++;
+            UpdateUI();
+        }, canAfford);
+
+        if (!canAfford)
+        {
+            StartCoroutine(MakeButtonRed(maxLifeButton));
+        }
+    }
+
+    public void OnSpecialButtonPressed(string specialName)
+    {
+        bool isUnlocked;
         switch (specialName)
         {
-            case "trashnet":
-                if (!playerData.TrashNetUnlocked)
-                {
-                    playerData.TrashNetUnlocked = true;
-                    playerData.TrashNetLevel = UnlockLevel.Level1;
-                    playerData.CurrentTrash -= cost;
-                    UpdateUnlockPrice(specialName);
-                    Debug.Log($"Unlocked TrashNet for {cost} trash. New trash: {playerData.CurrentTrash}, New unlock price: {currentUnlockPrices[specialName]}");
-                }
-                break;
-            case "icebreaker":
-                if (!playerData.IceBreakerUnlocked)
-                {
-                    playerData.IceBreakerUnlocked = true;
-                    playerData.IceBreakerLevel = UnlockLevel.Level1;
-                    playerData.CurrentTrash -= cost;
-                    UpdateUnlockPrice(specialName);
-                    Debug.Log($"Unlocked IceBreaker for {cost} trash. New trash: {playerData.CurrentTrash}, New unlock price: {currentUnlockPrices[specialName]}");
-                }
-                break;
-            case "speedburst":
-                if (!playerData.SpeedBurstUnlocked)
-                {
-                    playerData.SpeedBurstUnlocked = true;
-                    playerData.SpeedBurstLevel = UnlockLevel.Level1;
-                    playerData.CurrentTrash -= cost;
-                    UpdateUnlockPrice(specialName);
-                    Debug.Log($"Unlocked SpeedBurst for {cost} trash. New trash: {playerData.CurrentTrash}, New unlock price: {currentUnlockPrices[specialName]}");
-                }
-                break;
-            default:
-                Debug.LogWarning($"Invalid special name: {specialName}");
-                return;
-        }
-    }
-
-    // Upgrade a special ability
-    public void UpgradeSpecial(string specialName)
-    {
-        specialName = specialName.ToLower();
-        if (!currentUpgradePrices.TryGetValue(specialName, out int cost))
-        {
-            Debug.LogWarning($"Special {specialName} not found in pricing!");
-            return;
+            case "net": isUnlocked = playerData.TrashNetUnlocked; break;
+            case "magnet": isUnlocked = playerData.MagnetUnlocked; break;
+            case "solarPanel": isUnlocked = playerData.SolarPanelUnlocked; break;
+            case "iceBreaker": isUnlocked = playerData.IceBreakerUnlocked; break;
+            default: return;
         }
 
-        if (!CanAfford(cost)) return;
+        if (isUnlocked) return;
 
-        switch (specialName)
-        {
-            case "trashnet":
-                if (playerData.TrashNetUnlocked && playerData.TrashNetLevel < UnlockLevel.Level3)
-                {
-                    playerData.TrashNetLevel = playerData.TrashNetLevel + 1;
-                    playerData.CurrentTrash -= cost;
-                    UpdateUpgradePrice(specialName);
-                    Debug.Log($"Upgraded TrashNet to {playerData.TrashNetLevel} for {cost} trash. New trash: {playerData.CurrentTrash}, New upgrade price: {currentUpgradePrices[specialName]}");
-                }
-                break;
-            case "icebreaker":
-                if (playerData.IceBreakerUnlocked && playerData.IceBreakerLevel < UnlockLevel.Level3)
-                {
-                    playerData.IceBreakerLevel = playerData.IceBreakerLevel + 1;
-                    playerData.CurrentTrash -= cost;
-                    UpdateUpgradePrice(specialName);
-                    Debug.Log($"Upgraded IceBreaker to {playerData.IceBreakerLevel} for {cost} trash. New trash: {playerData.CurrentTrash}, New upgrade price: {currentUpgradePrices[specialName]}");
-                }
-                break;
-            case "speedburst":
-                if (playerData.SpeedBurstUnlocked && playerData.SpeedBurstLevel < UnlockLevel.Level3)
-                {
-                    playerData.SpeedBurstLevel = playerData.SpeedBurstLevel + 1;
-                    playerData.CurrentTrash -= cost;
-                    UpdateUpgradePrice(specialName);
-                    Debug.Log($"Upgraded SpeedBurst to {playerData.SpeedBurstLevel} for {cost} trash. New trash: {playerData.CurrentTrash}, New upgrade price: {currentUpgradePrices[specialName]}");
-                }
-                break;
-            default:
-                Debug.LogWarning($"Invalid special name: {specialName}");
-                return;
-        }
-    }
+        int cost = specialUnlockCosts[specialName];
+        bool canAfford = playerData.RecyclePoints >= cost;
 
-    private bool CanAfford(int cost)
-    {
-        if (playerData.CurrentTrash >= cost)
-        {
-            return true;
-        }
-        Debug.LogWarning($"Not enough trash to afford {cost}. Current trash: {playerData.CurrentTrash}");
-        return false;
-    }
+        string message = $"This will cost {cost} recycle points to unlock {specialName}";
+        if (!canAfford)
+            message += "\nInsufficient recycle points!";
 
-    private void UpdateStatPrice(string statName)
-    {
-        statName = statName.ToLower();
-        foreach (var price in statPrices)
+        ShowConfirmationPrompt(message, () =>
         {
-            if (price.statName.ToLower() == statName)
+            playerData.RecyclePoints -= cost;
+            switch (specialName)
             {
-                currentStatPrices[statName] = Mathf.CeilToInt(currentStatPrices[statName] * price.priceMultiplier);
-                break;
+                case "net": playerData.TrashNetUnlocked = true; break;
+                case "magnet": playerData.MagnetUnlocked = true; break;
+                case "solarPanel": playerData.SolarPanelUnlocked = true; break;
+                case "iceBreaker": playerData.IceBreakerUnlocked = true; break;
             }
+            UpdateUI();
+        }, canAfford);
+
+        if (!canAfford)
+        {
+            StartCoroutine(MakeButtonRed(GetButtonByName(specialName)));
         }
+    }
+    #endregion
+
+    #region Helper Methods
+    private Button GetButtonByName(string name)
+    {
+        return name switch
+        {
+            "net" => netButton,
+            "magnet" => magnetButton,
+            "solarPanel" => solarPanelButton,
+            "iceBreaker" => iceBreakerButton,
+            _ => null
+        };
     }
 
-    private void UpdateUnlockPrice(string specialName)
+    private bool CanAffordNextSpeedUpgrade()
     {
-        specialName = specialName.ToLower();
-        foreach (var price in specialPrices)
-        {
-            if (price.specialName.ToLower() == specialName)
-            {
-                currentUnlockPrices[specialName] = Mathf.CeilToInt(currentUnlockPrices[specialName] * price.unlockPriceMultiplier);
-                break;
-            }
-        }
+        int level = playerData.SpeedUpgradeLevel;
+        return level < 3 && playerData.RecyclePoints >= speedUpgradeCosts[level];
     }
 
-    private void UpdateUpgradePrice(string specialName)
+    private bool CanAffordNextEnginePowerUpgrade()
     {
-        specialName = specialName.ToLower();
-        foreach (var price in specialPrices)
-        {
-            if (price.specialName.ToLower() == specialName)
-            {
-                currentUpgradePrices[specialName] = Mathf.CeilToInt(currentUpgradePrices[specialName] * price.upgradePriceMultiplier);
-                break;
-            }
-        }
+        int level = playerData.EnginePowerLevel;
+        return level < 3 && playerData.RecyclePoints >= enginePowerUpgradeCosts[level];
     }
 
-    // Helper to get current stat value for logging
-    private int GetStatValue(string statName)
+    private bool CanAffordNextStorageUpgrade()
     {
-        switch (statName.ToLower())
-        {
-            case "hp": return playerData.PlayerHP;
-            case "energy": return playerData.PlayerEnergy;
-            case "speed": return playerData.PlayerSpeed;
-            case "storage": return playerData.CurrentTrash;
-            default: return 0;
-        }
+        int level = playerData.StorageUpgradeLevel;
+        int cost = level < 4 ? storageUpgradeCosts[level] : ADDITIONAL_STORAGE_COST;
+        return playerData.RecyclePoints >= cost;
     }
+
+    private bool CanAffordNextEnergyUpgrade()
+    {
+        int level = playerData.EnergyUpgradeLevel;
+        return level < 4 && playerData.RecyclePoints >= energyUpgradeCosts[level];
+    }
+
+    private bool CanAffordNextMaxLifeUpgrade()
+    {
+        int level = playerData.MaxLifeUpgradeLevel;
+        return level < 4 && playerData.RecyclePoints >= maxLifeUpgradeCosts[level];
+    }
+
+    private bool CanAffordSpecial(string specialName)
+    {
+        return playerData.RecyclePoints >= specialUnlockCosts[specialName];
+    }
+    #endregion
 }
