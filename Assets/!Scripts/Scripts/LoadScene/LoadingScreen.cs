@@ -20,8 +20,12 @@ public class LoadingScreen : MonoBehaviour
     [SerializeField, Tooltip("Enable debug logs for loading progress")]
     private bool debug = false;
 
+    [SerializeField, Tooltip("Name of the scene to load")]
+    private string targetSceneName = "GameScene";
+
     private AsyncOperation operation;
     private float timer;
+    private bool isLoading;
 
     private void Start()
     {
@@ -30,6 +34,8 @@ public class LoadingScreen : MonoBehaviour
             Debug.LogError("Progress Slider not assigned in LoadingScreen!");
         if (spinningIcon == null)
             Debug.LogError("Spinning Icon not assigned in LoadingScreen!");
+        if (string.IsNullOrEmpty(targetSceneName))
+            Debug.LogError("Target Scene Name not set in LoadingScreen!");
 
         // Initialize the slider
         if (progressSlider != null)
@@ -39,8 +45,15 @@ public class LoadingScreen : MonoBehaviour
             progressSlider.value = 0f;
         }
 
+        // Unload unused assets to free memory
+        Resources.UnloadUnusedAssets();
+
         // Begin preloading the scene
-        StartCoroutine(PreloadSceneWithDelay());
+        if (!isLoading)
+        {
+            isLoading = true;
+            StartCoroutine(PreloadSceneWithDelay());
+        }
     }
 
     private void Update()
@@ -64,8 +77,22 @@ public class LoadingScreen : MonoBehaviour
 
     private IEnumerator PreloadSceneWithDelay()
     {
-        // Start preloading the scene asynchronously, but prevent activation
-        operation = SceneManager.LoadSceneAsync("GameScene");
+        // Validate scene exists in Build Settings
+        if (!IsSceneInBuildSettings(targetSceneName))
+        {
+            Debug.LogError($"Target scene '{targetSceneName}' not found in Build Settings! LoadingScreen will not proceed.");
+            yield break;
+        }
+
+        // Start preloading the scene asynchronously
+        operation = SceneManager.LoadSceneAsync(targetSceneName);
+        if (operation == null)
+        {
+            Debug.LogError($"Failed to start loading scene '{targetSceneName}'. Check scene setup.");
+            isLoading = false;
+            yield break;
+        }
+
         operation.allowSceneActivation = false;
 
         // Track elapsed time
@@ -76,7 +103,7 @@ public class LoadingScreen : MonoBehaviour
             yield return null;
         }
 
-        // After 10 seconds, allow the scene to activate
+        // Allow the scene to activate
         operation.allowSceneActivation = true;
 
         // Wait until the scene is fully loaded and activated
@@ -87,7 +114,20 @@ public class LoadingScreen : MonoBehaviour
             yield return null;
         }
 
+        isLoading = false;
         if (debug)
-            Debug.Log("LoadingScreen: GameScene fully loaded and activated");
+            Debug.Log($"LoadingScreen: Scene '{targetSceneName}' fully loaded and activated");
+    }
+
+    private bool IsSceneInBuildSettings(string sceneName)
+    {
+        for (int i = 0; i < SceneManager.sceneCountInBuildSettings; i++)
+        {
+            string path = SceneUtility.GetScenePathByBuildIndex(i);
+            string name = System.IO.Path.GetFileNameWithoutExtension(path);
+            if (name == sceneName)
+                return true;
+        }
+        return false;
     }
 }
