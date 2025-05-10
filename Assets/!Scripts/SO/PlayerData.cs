@@ -233,7 +233,7 @@ public class PlayerData : ScriptableObject
 
     public void ResetData()
     {
-        //recyclePoints = 0;
+        recyclePoints = 0;
         playerHP = 100;
         playerEnergy = 10;
         maxPlayerStorage = 5;

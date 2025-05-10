@@ -30,6 +30,7 @@ public class NetCollisionHandler : MonoBehaviour
             if (debug)
                 Debug.Log($"Net {name} collided with {collision.gameObject.name} on Trash layer.");
             netUpgrade.HandleNetCollision(collision);
+            AudioManager.Instance.PlaySoundByIndex(7);
         }
     }
 }

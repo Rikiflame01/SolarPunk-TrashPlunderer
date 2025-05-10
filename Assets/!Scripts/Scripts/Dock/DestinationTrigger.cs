@@ -51,6 +51,7 @@ public class DestinationTrigger : MonoBehaviour
                 int points = netUpgrade.GetCurrentNetStorage();
                 if (points > 0)
                 {
+                    AudioManager.Instance.PlaySoundByIndex(11);
                     playerData.RecyclePoints += points;
                     netUpgrade.ResetNet();
                     if (debug)

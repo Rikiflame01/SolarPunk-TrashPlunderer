@@ -360,6 +360,7 @@ public class PlayerController : MonoBehaviour
         {
             if (canCollect)
             {
+                AudioManager.Instance.PlaySoundByIndex(0);
                 ActionManager.InvokeTrashCollected(points);
                 trashInteractionSystem.OnTrashCollected(closest);
                 Destroy(closest.gameObject);

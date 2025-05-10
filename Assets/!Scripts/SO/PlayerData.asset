@@ -14,21 +14,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playerHP: 100
   maxPlayerHP: 100
-  playerEnergy: 1
+  playerEnergy: 10
   maxPlayerEnergy: 10
   playerSpeed: 5
   maxPlayerSpeed: 5
   maxPlayerStorage: 5
   currentTrash: 0
-  recyclePoints: 924
-  trashNetUnlocked: 1
+  recyclePoints: 0
+  trashNetUnlocked: 0
   trashNetLevel: 0
   iceBreakerUnlocked: 0
   iceBreakerLevel: 0
   speedBurstUnlocked: 0
   speedBurstLevel: 0
-  magnetUnlocked: 1
-  solarPanelUnlocked: 1
+  magnetUnlocked: 0
+  solarPanelUnlocked: 0
   speedUpgradeLevel: 1
   storageUpgradeLevel: 1
   energyUpgradeLevel: 1
