@@ -14,6 +14,37 @@ public static class ActionManager
 
     public static event Action<GameState> OnGameStateChanged;
 
+    public static event Action OnMagnetUpgrade;
+
+    public static event Action OnIceBreakerUpgrade;
+    public static event Action OnTrashNetUpgrade;
+
+    public static event Action OnSolarPanelUpgrade;
+
+    public static event Action OnMaxEnginePowerUpgrade;
+
+    public static void InvokeMaxEnginePowerUpgrade()
+    {
+        OnMaxEnginePowerUpgrade?.Invoke();
+    }
+    public static void InvokeMagnetUpgrade()
+    {
+        OnMagnetUpgrade?.Invoke();
+    }
+    public static void InvokeIceBreakerUpgrade()
+    {
+        OnIceBreakerUpgrade?.Invoke();
+    }
+
+    public static void InvokeTrashNetUpgrade()
+    {
+        OnTrashNetUpgrade?.Invoke();
+    }
+
+    public static void InvokeSolarPanelUpgrade()
+    {
+        OnSolarPanelUpgrade?.Invoke();
+    }
 
     public static void InvokeGameStateChanged(GameState newState)
     {
@@ -54,4 +85,6 @@ public static class ActionManager
     {
         OnTrashCollected?.Invoke(points);
     }
+
+
 }

@@ -186,11 +186,18 @@ public class ShopManager : MonoBehaviour
         string message = $"This will cost {cost} recycle points to upgrade engine power to level {currentLevel + 1}";
         if (!canAfford)
             message += "\nInsufficient recycle points!";
+        if (currentLevel == 2)
+            message += " and unlock Max Engine Power special";
 
         ShowConfirmationPrompt(message, () =>
         {
             playerData.RecyclePoints -= cost;
             playerData.EnginePowerLevel++;
+            if (playerData.EnginePowerLevel == 3)
+            {
+                ActionManager.InvokeMaxEnginePowerUpgrade();
+                Debug.Log("Max Engine Power upgraded!");
+            }
             UpdateUI();
         }, canAfford);
 
@@ -285,14 +292,34 @@ public class ShopManager : MonoBehaviour
         bool isUnlocked;
         switch (specialName)
         {
-            case "net": isUnlocked = playerData.TrashNetUnlocked; break;
-            case "magnet": isUnlocked = playerData.MagnetUnlocked; break;
-            case "solarPanel": isUnlocked = playerData.SolarPanelUnlocked; break;
-            case "iceBreaker": isUnlocked = playerData.IceBreakerUnlocked; break;
-            default: return;
+            case "net":
+                isUnlocked = playerData.TrashNetUnlocked;
+                break;
+            case "magnet":
+                isUnlocked = playerData.MagnetUnlocked;
+                break;
+            case "solarPanel":
+                isUnlocked = playerData.SolarPanelUnlocked;
+                break;
+            case "iceBreaker":
+                isUnlocked = playerData.IceBreakerUnlocked;
+                break;
+            default:
+                Debug.LogWarning($"Unknown special name: {specialName}");
+                return;
         }
 
-        if (isUnlocked) return;
+        if (isUnlocked)
+        {
+            Debug.Log($"Special '{specialName}' is already unlocked.");
+            return;
+        }
+
+        if (!specialUnlockCosts.ContainsKey(specialName))
+        {
+            Debug.LogError($"No unlock cost defined for special '{specialName}'!");
+            return;
+        }
 
         int cost = specialUnlockCosts[specialName];
         bool canAfford = playerData.RecyclePoints >= cost;
@@ -306,12 +333,25 @@ public class ShopManager : MonoBehaviour
             playerData.RecyclePoints -= cost;
             switch (specialName)
             {
-                case "net": playerData.TrashNetUnlocked = true; break;
-                case "magnet": playerData.MagnetUnlocked = true; break;
-                case "solarPanel": playerData.SolarPanelUnlocked = true; break;
-                case "iceBreaker": playerData.IceBreakerUnlocked = true; break;
+                case "net":
+                    playerData.TrashNetUnlocked = true;
+                    ActionManager.InvokeTrashNetUpgrade();
+                    break;
+                case "magnet":
+                    playerData.MagnetUnlocked = true;
+                    ActionManager.InvokeMagnetUpgrade();
+                    break;
+                case "solarPanel":
+                    playerData.SolarPanelUnlocked = true;
+                    ActionManager.InvokeSolarPanelUpgrade();
+                    break;
+                case "iceBreaker":
+                    playerData.IceBreakerUnlocked = true;
+                    ActionManager.InvokeIceBreakerUpgrade();
+                    break;
             }
             UpdateUI();
+            Debug.Log($"Unlocked special '{specialName}' for {cost} recycle points.");
         }, canAfford);
 
         if (!canAfford)

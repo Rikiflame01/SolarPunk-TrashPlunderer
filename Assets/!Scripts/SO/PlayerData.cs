@@ -235,7 +235,7 @@ public class PlayerData : ScriptableObject
 
     public void ResetData()
     {
-        recyclePoints = 0;
+        //recyclePoints = 0;
         playerHP = 100;
         playerEnergy = 10;
         maxPlayerStorage = 5;
@@ -252,6 +252,14 @@ public class PlayerData : ScriptableObject
         speedBurstLevel = UnlockLevel.Level1;
         emergencyReservesPower = false;
         emergencyReservesHealth = false;
+        solarPanelUnlocked = false;
+        magnetUnlocked = false;
+        enginePowerLevel = 1;
+        maxLifeUpgradeLevel = 1;
+        speedUpgradeLevel = 1;
+        energyUpgradeLevel = 1;
+        storageUpgradeLevel = 1;
+
     }
 
     void OnEnable()

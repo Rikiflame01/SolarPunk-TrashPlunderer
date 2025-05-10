@@ -12,28 +12,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e35577465cdf4ff4f80cbdbaad8f39e2, type: 3}
   m_Name: PlayerData
   m_EditorClassIdentifier: 
-  playerHP: 130
-  maxPlayerHP: 130
-  playerEnergy: 18
-  maxPlayerEnergy: 25
+  playerHP: 100
+  maxPlayerHP: 100
+  playerEnergy: 8
+  maxPlayerEnergy: 10
   playerSpeed: 5
   maxPlayerSpeed: 5
   maxPlayerStorage: 5
   currentTrash: 0
-  recyclePoints: 0
+  recyclePoints: 218
   trashNetUnlocked: 0
   trashNetLevel: 0
   iceBreakerUnlocked: 0
   iceBreakerLevel: 0
   speedBurstUnlocked: 0
   speedBurstLevel: 0
-  magnetUnlocked: 0
+  magnetUnlocked: 1
   solarPanelUnlocked: 0
   speedUpgradeLevel: 1
   storageUpgradeLevel: 1
-  energyUpgradeLevel: 2
-  maxLifeUpgradeLevel: 3
-  enginePowerLevel: 0
+  energyUpgradeLevel: 1
+  maxLifeUpgradeLevel: 1
+  enginePowerLevel: 1
   hpRegenRate: 5
   energyRegenRate: 1
   emergencyReservesPower: 0
