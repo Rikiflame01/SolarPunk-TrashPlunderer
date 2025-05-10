@@ -1,7 +1,8 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Collections;
 
-    [System.Serializable]
+[System.Serializable]
     public class BatchDefinition
     {
         [Tooltip("Prefabs to randomly choose from for this batch (e.g., trash variants)")]
@@ -41,6 +42,7 @@ using System.Collections.Generic;
         public Vector3 customRotation = Vector3.zero;
     }
 
+
 public class OceanFloorPlacer : MonoBehaviour
 {
     [SerializeField, Tooltip("The plane GameObject representing the ocean floor")]
@@ -73,10 +75,33 @@ public class OceanFloorPlacer : MonoBehaviour
     void Start()
     {
         CalculatePlaneBounds();
-        PlaceAllItems();
+        StartCoroutine(PlaceAllItemsAsync());
     }
 
-    // Calculate the world bounds of the plane
+    private IEnumerator PlaceAllItemsAsync()
+    {
+        foreach (BatchDefinition batch in batches)
+        {
+            for (int i = 0; i < batch.numberOfBatches; i++)
+            {
+                if (!PlaceBatch(batch))
+                    ForcePlaceBatch(batch);
+                yield return null; // Yield to allow the main thread to breathe
+            }
+        }
+
+        foreach (IndividualItemDefinition item in individualItems)
+        {
+            for (int i = 0; i < item.numberToPlace; i++)
+            {
+                if (!PlaceIndividualItem(item))
+                    ForcePlaceIndividualItem(item);
+                yield return null; // Yield to allow the main thread to breathe
+            }
+        }
+    }
+
+    // Remaining methods (CalculatePlaneBounds, PlaceBatch, ForcePlaceBatch, etc.) remain unchanged
     private void CalculatePlaneBounds()
     {
         if (plane == null)
@@ -94,31 +119,6 @@ public class OceanFloorPlacer : MonoBehaviour
         Debug.Log($"Plane bounds: Center={planeCenter}, Extents={planeExtents}, Y={planeY}");
     }
 
-    // Main function to place all batches and individual items
-    private void PlaceAllItems()
-    {
-        // Place batches first
-        foreach (BatchDefinition batch in batches)
-        {
-            for (int i = 0; i < batch.numberOfBatches; i++)
-            {
-                if (!PlaceBatch(batch))
-                    ForcePlaceBatch(batch);
-            }
-        }
-
-        // Then place individual items
-        foreach (IndividualItemDefinition item in individualItems)
-        {
-            for (int i = 0; i < item.numberToPlace; i++)
-            {
-                if (!PlaceIndividualItem(item))
-                    ForcePlaceIndividualItem(item);
-            }
-        }
-    }
-
-    // Attempt to place a batch of items
     private bool PlaceBatch(BatchDefinition batch)
     {
         Quaternion spawnRotation = plane.transform.rotation * Quaternion.Euler(-90, 0, 0);
@@ -134,34 +134,30 @@ public class OceanFloorPlacer : MonoBehaviour
             if (noiseValue < batch.noiseThreshold)
                 continue;
 
-            // Check if the batch area is free from other objects
             Collider[] overlaps = Physics.OverlapSphere(center, batch.batchRadius + globalSpacing);
             if (overlaps.Length > 0)
                 continue;
 
-            // Generate positions for items within the batch
             List<Vector3> batchPositions = GenerateBatchPositions(center, batch);
             if (batchPositions == null)
                 continue;
 
-            // Place all items in the batch
             foreach (Vector3 pos in batchPositions)
             {
                 GameObject prefab = batch.prefabs[Random.Range(0, batch.prefabs.Length)];
                 if (prefab.GetComponent<Collider>() == null)
                     Debug.LogWarning($"Prefab {prefab.name} has no collider!");
-                GameObject spawnedObject = Instantiate(prefab, pos, spawnRotation); // Parentless
-                spawnedObject.transform.localScale = prefab.transform.localScale; // Preserve prefab scale
+                GameObject spawnedObject = Instantiate(prefab, pos, spawnRotation);
+                spawnedObject.transform.localScale = prefab.transform.localScale;
             }
 
-            return true; // Successfully placed the batch
+            return true;
         }
 
         Debug.LogWarning($"Failed to place batch after {MAX_ATTEMPTS} attempts.");
         return false;
     }
 
-    // Force place a batch (ignore noise and overlap)
     private void ForcePlaceBatch(BatchDefinition batch)
     {
         Quaternion spawnRotation = plane.transform.rotation * Quaternion.Euler(-90, 0, 0);
@@ -177,12 +173,11 @@ public class OceanFloorPlacer : MonoBehaviour
         foreach (Vector3 pos in batchPositions)
         {
             GameObject prefab = batch.prefabs[Random.Range(0, batch.prefabs.Length)];
-            GameObject spawnedObject = Instantiate(prefab, pos, spawnRotation); // Parentless
-            spawnedObject.transform.localScale = prefab.transform.localScale; // Preserve prefab scale
+            GameObject spawnedObject = Instantiate(prefab, pos, spawnRotation);
+            spawnedObject.transform.localScale = prefab.transform.localScale;
         }
     }
 
-    // Generate positions for items within a batch, ensuring spacingWithinBatch
     private List<Vector3> GenerateBatchPositions(Vector3 center, BatchDefinition batch)
     {
         List<Vector3> positions = new List<Vector3>();
@@ -194,7 +189,6 @@ public class OceanFloorPlacer : MonoBehaviour
                 Vector2 offset = Random.insideUnitCircle * batch.batchRadius;
                 Vector3 candidate = center + new Vector3(offset.x, 0, offset.y);
 
-                // Adjust Y using raycast or fallback
                 if (useRaycast)
                 {
                     Vector3 rayStart = candidate + plane.transform.up * 10f;
@@ -229,14 +223,13 @@ public class OceanFloorPlacer : MonoBehaviour
                 }
 
                 if (attempt == MAX_ATTEMPTS - 1)
-                    return null; // Failed to place all items
+                    return null;
             }
         }
 
         return positions;
     }
 
-    // Attempt to place an individual item
     private bool PlaceIndividualItem(IndividualItemDefinition item)
     {
         Quaternion spawnRotation = plane.transform.rotation * Quaternion.Euler(-90, 0, 0);
@@ -252,31 +245,28 @@ public class OceanFloorPlacer : MonoBehaviour
             if (noiseValue < item.noiseThreshold)
                 continue;
 
-            // Check if the position is free from other objects
             Collider[] overlaps = Physics.OverlapSphere(position, globalSpacing / 2f);
             if (overlaps.Length > 0)
                 continue;
 
             if (item.prefab.GetComponent<Collider>() == null)
                 Debug.LogWarning($"Prefab {item.prefab.name} has no collider!");
-            GameObject spawnedObject = Instantiate(item.prefab, position, spawnRotation); // Parentless
-            spawnedObject.transform.localScale = item.prefab.transform.localScale; // Preserve prefab scale
-            return true; // Successfully placed the item
+            GameObject spawnedObject = Instantiate(item.prefab, position, spawnRotation);
+            spawnedObject.transform.localScale = item.prefab.transform.localScale;
+            return true;
         }
 
         return false;
     }
 
-    // Force place an individual item (ignore noise and overlap)
     private void ForcePlaceIndividualItem(IndividualItemDefinition item)
     {
         Quaternion spawnRotation = plane.transform.rotation * Quaternion.Euler(-90, 0, 0);
         Vector3 position = GenerateRandomPosition();
-        GameObject spawnedObject = Instantiate(item.prefab, position, spawnRotation); // Parentless
-        spawnedObject.transform.localScale = item.prefab.transform.localScale; // Preserve prefab scale
+        GameObject spawnedObject = Instantiate(item.prefab, position, spawnRotation);
+        spawnedObject.transform.localScale = item.prefab.transform.localScale;
     }
 
-    // Generate a random position within the plane's bounds
     private Vector3 GenerateRandomPosition()
     {
         float x = Random.Range(planeCenter.x - planeExtents.x, planeCenter.x + planeExtents.x);
@@ -293,6 +283,6 @@ public class OceanFloorPlacer : MonoBehaviour
             }
         }
 
-        return new Vector3(x, planeY, z); // Fallback
+        return new Vector3(x, planeY, z);
     }
 }

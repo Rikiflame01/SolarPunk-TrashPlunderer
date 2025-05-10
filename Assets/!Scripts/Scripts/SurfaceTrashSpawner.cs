@@ -1,10 +1,10 @@
 using UnityEngine;
-using System.Collections.Generic;namespace TrashSpawner
-{
-    public class SurfaceTrashSpawner : MonoBehaviour
+using System.Collections.Generic;
+
+public class SurfaceTrashSpawner : MonoBehaviour
     {
-        [SerializeField, Tooltip("The plane GameObject representing the surface")]
-        private GameObject plane;
+    [SerializeField, Tooltip("The plane GameObject representing the surface")]
+    private GameObject plane;
 
     [SerializeField, Tooltip("Trigger collider defining the spawn area")]
     private Collider spawnTriggerCollider;
@@ -323,7 +323,5 @@ public class FloatingManager : MonoBehaviour
             data.transform.Rotate(0, data.rotationSpeed * Time.deltaTime, 0);
         }
     }
-}
-
 }
 
