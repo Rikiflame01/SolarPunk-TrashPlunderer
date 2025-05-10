@@ -117,7 +117,5 @@ public class PauseManager : MonoBehaviour
         // Quit the application
         Application.Quit();
 
-        // Log to console (only visible in editor)
-        Debug.Log("Game is quitting...");
     }
 }

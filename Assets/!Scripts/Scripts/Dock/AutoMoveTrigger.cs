@@ -194,7 +194,7 @@ public class AutoMoveTrigger : MonoBehaviour
             Debug.Log($"Moving to {(isMovingToExit ? "exit" : "target")}. Velocity: {playerRigidbody.linearVelocity}, Destination: {destination}");
     }
 
-    private void StartMovingToExit()
+    public void StartMovingToExit()
     {
         if (exitTransform == null || playerRigidbody == null)
         {

@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 7239713427597235147}
   - component: {fileID: 3077147198739411545}
   - component: {fileID: 5161889604281623883}
-  - component: {fileID: 8914357071668801446}
+  - component: {fileID: -1332107016550098236}
   m_Layer: 0
   m_Name: CoralChimney1Pink
   m_TagString: Untagged
@@ -87,8 +87,8 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!64 &8914357071668801446
-MeshCollider:
+--- !u!65 &-1332107016550098236
+BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -105,7 +105,6 @@ MeshCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 1
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 3871344569200122049, guid: ede90f0517bd0454aaed47ed57bbb1a5, type: 3}
+  serializedVersion: 3
+  m_Size: {x: 0.07093522, y: 0.08067773, z: 0.103682466}
+  m_Center: {x: 0, y: 0.0020253987, z: 0.041716434}

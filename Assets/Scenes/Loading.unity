@@ -785,7 +785,9 @@ MonoBehaviour:
   progressSlider: {fileID: 1233790992}
   spinningIcon: {fileID: 1939593041}
   rotationSpeed: 180
+  loadingTime: 10
   debug: 0
+  targetSceneName: GameScene
 --- !u!1 &1412122019
 GameObject:
   m_ObjectHideFlags: 0

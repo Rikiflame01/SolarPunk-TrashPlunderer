@@ -146,7 +146,6 @@ public class TrashInteractionSystem : MonoBehaviour
             {
                 canvasPosition = closestTrash.GetCanvasPosition();
                 canvasInstance.ShowPrompt(prompt, canvasPosition);
-                Debug.Log($"Showing canvas for {closestTrash.gameObject.name} with prompt: {prompt} at {canvasPosition}");
             }
         }
         else if (closestTrash != null && string.IsNullOrEmpty(prompt))

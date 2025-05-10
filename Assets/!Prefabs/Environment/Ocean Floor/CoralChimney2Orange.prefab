@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 5115665626612992272}
   - component: {fileID: 4683138463033178559}
   - component: {fileID: 2211999864068778471}
-  - component: {fileID: 1723331973875430891}
+  - component: {fileID: 5251767583643225845}
   m_Layer: 0
   m_Name: CoralChimney2Orange
   m_TagString: Untagged
@@ -87,8 +87,8 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!64 &1723331973875430891
-MeshCollider:
+--- !u!65 &5251767583643225845
+BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -105,7 +105,6 @@ MeshCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 1
-  m_CookingOptions: 30
-  m_Mesh: {fileID: -8783907086729132437, guid: ede90f0517bd0454aaed47ed57bbb1a5, type: 3}
+  serializedVersion: 3
+  m_Size: {x: 0.07093522, y: 0.07185443, z: 0.10455524}
+  m_Center: {x: 0, y: -0.002386254, z: 0.04215288}

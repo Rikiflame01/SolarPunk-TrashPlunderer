@@ -32,7 +32,6 @@ public class InteractionCanvas : MonoBehaviour
         showingTempMessage = false;
         messageTimer = 0f;
         EnableCanvas();
-        Debug.Log($"Showing prompt: {prompt} at {position}");
     }
 
     public void ShowTempMessage(string message, float duration)
