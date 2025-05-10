@@ -3,7 +3,11 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 3
-  tags: []
+  tags:
+  - Boat1
+  - Boat2
+  - TargetTrigger
+  - ExitTrigger
   layers:
   - Default
   - TransparentFX

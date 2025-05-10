@@ -221,8 +221,7 @@ public class PlayerData : ScriptableObject
 
     private void ExpelTrash()
     {
-        currentTrash = 0; // Reset current trash
-        // TODO: Implement logic to drop a trash crate (e.g., instantiate a GameObject)
+
     }
 
     private void DisableSpecialAbilities()
@@ -230,7 +229,6 @@ public class PlayerData : ScriptableObject
         trashNetUnlocked = false;
         iceBreakerUnlocked = false;
         speedBurstUnlocked = false;
-        // Levels are preserved as per requirement
     }
 
     public void ResetData()
